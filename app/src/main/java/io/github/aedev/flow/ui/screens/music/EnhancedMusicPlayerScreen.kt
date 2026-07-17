@@ -97,25 +97,34 @@ fun EnhancedMusicPlayerScreen(
     var sheetAccentColor by remember { mutableStateOf<Color?>(null) }
     
     val thumbnailUrl = uiState.currentTrack?.highResThumbnailUrl ?: track.highResThumbnailUrl
-    LaunchedEffect(thumbnailUrl) {
-        if (thumbnailUrl.isNotEmpty()) {
-            val request = ImageRequest.Builder(context)
-                .data(thumbnailUrl)
-                .allowHardware(false)
-                .size(128)
-                .build()
-            val result = context.imageLoader.execute(request)
-            if (result is SuccessResult) {
+    LaunchedEffect(thumbnailUrl, isPlayerSheetExpanded, backgroundStyle) {
+        if (!MusicArtworkPalettePolicy.shouldExtract(isPlayerSheetExpanded, backgroundStyle) ||
+            thumbnailUrl.isEmpty()
+        ) {
+            sheetColor = null
+            sheetAccentColor = null
+            return@LaunchedEffect
+        }
+
+        val request = ImageRequest.Builder(context)
+            .data(thumbnailUrl)
+            .allowHardware(false)
+            .size(128)
+            .build()
+        val result = context.imageLoader.execute(request)
+        if (result is SuccessResult) {
+            val paletteColors = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
                 val bitmap = result.drawable.toBitmap()
                 val palette = Palette.from(bitmap).generate()
-                val bgSwatch = palette.darkMutedSwatch ?: palette.darkVibrantSwatch ?: palette.dominantSwatch
-                val accentSwatch = palette.vibrantSwatch ?: palette.lightVibrantSwatch ?: palette.lightMutedSwatch
-                sheetColor = bgSwatch?.let { Color(it.rgb) }
-                sheetAccentColor = accentSwatch?.let { Color(it.rgb) }
-            } else {
-                sheetColor = null
-                sheetAccentColor = null
+                val background = palette.darkMutedSwatch ?: palette.darkVibrantSwatch ?: palette.dominantSwatch
+                val accent = palette.vibrantSwatch ?: palette.lightVibrantSwatch ?: palette.lightMutedSwatch
+                background?.rgb to accent?.rgb
             }
+            sheetColor = paletteColors.first?.let(::Color)
+            sheetAccentColor = paletteColors.second?.let(::Color)
+        } else {
+            sheetColor = null
+            sheetAccentColor = null
         }
     }
     
