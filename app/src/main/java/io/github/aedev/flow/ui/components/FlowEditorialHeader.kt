@@ -1,8 +1,7 @@
 package io.github.aedev.flow.ui.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -42,7 +41,7 @@ fun FlowEditorialHeader(
 ) {
     val activeTab = selectedTab?.coerceIn(0, (tabs.size - 1).coerceAtLeast(0)) ?: 0
 
-    Box(modifier = modifier.fillMaxWidth()) {
+    Column(modifier = modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -92,7 +91,6 @@ fun FlowEditorialHeader(
         if (tabs.isNotEmpty()) {
             ScrollableTabRow(
                 selectedTabIndex = activeTab,
-                modifier = Modifier.align(Alignment.BottomStart),
                 edgePadding = FlowSpacing.md,
                 containerColor = MaterialTheme.colorScheme.surface,
                 contentColor = MaterialTheme.colorScheme.primary,
