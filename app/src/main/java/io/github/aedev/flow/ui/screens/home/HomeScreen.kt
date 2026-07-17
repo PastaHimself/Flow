@@ -309,9 +309,9 @@ fun HomeScreen(
                 }
                 
                 uiState.error != null && uiState.videos.isEmpty() -> {
-                    ErrorState(
-                        message = uiState.error ?: stringResource(R.string.error_occurred),
-                        onRetry = { viewModel.retry() }
+                    FlowErrorState(
+                        title = uiState.error ?: stringResource(R.string.error_occurred),
+                        onRetry = { viewModel.retry() },
                     )
                 }
                 
@@ -549,32 +549,6 @@ private fun FlowFeedFooter(
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(androidx.compose.ui.res.stringResource(R.string.home_refresh_feed))
-        }
-    }
-}
-
-@Composable
-private fun ErrorState(
-    message: String,
-    onRetry: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            TextButton(onClick = onRetry) {
-                Text(androidx.compose.ui.res.stringResource(R.string.retry))
-            }
         }
     }
 }
