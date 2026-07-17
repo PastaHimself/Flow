@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
+import io.github.aedev.flow.ui.theme.FlowMotion
 import io.github.aedev.flow.ui.theme.FlowShapeTokens
 
 /** Shared focus treatment for TV cards and controls. */
@@ -38,6 +39,7 @@ fun TvFocusableCard(
     var focused by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(
         targetValue = if (focused) TvFocusStyle.focusedScale else TvFocusStyle.unfocusedScale,
+        animationSpec = FlowMotion.feedbackSpec(),
         label = "tvCardScale",
     )
 
