@@ -120,8 +120,8 @@ fun EnhancedMusicPlayerScreen(
                 val accent = palette.vibrantSwatch ?: palette.lightVibrantSwatch ?: palette.lightMutedSwatch
                 background?.rgb to accent?.rgb
             }
-            sheetColor = paletteColors.first?.let(::Color)
-            sheetAccentColor = paletteColors.second?.let(::Color)
+            sheetColor = paletteColors.first?.let { Color(it) }
+            sheetAccentColor = paletteColors.second?.let { Color(it) }
         } else {
             sheetColor = null
             sheetAccentColor = null
