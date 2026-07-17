@@ -24,11 +24,13 @@
 - Modify: `app/src/main/java/io/github/aedev/flow/ui/components/VideoCard.kt`
 - Create: `app/src/main/java/io/github/aedev/flow/ui/components/FlowEditorialHeader.kt`
 - Create: `app/src/test/java/io/github/aedev/flow/ui/components/FlowContentComponentTest.kt`
+- Create: `app/src/test/java/io/github/aedev/flow/ui/components/FlowContentTestFixtures.kt`
 
 **Interfaces:**
 - Preserve existing public video-card callbacks.
 - Add `enum class FlowCardDensity { LIST, GRID, COMPACT }`.
 - Add `FlowEditorialHeader(title, subtitle, avatarUrl, actions, tabs, modifier)`.
+- Define `sampleVideo` in `FlowContentTestFixtures.kt` with `Video(id = "video-1", title = "Sample video", channelName = "Flow", channelId = "channel-1", thumbnailUrl = "", duration = 60, viewCount = 1L, uploadDate = "")`.
 
 - [ ] **Step 1: Write failing component tests**
 
@@ -76,14 +78,18 @@ git commit -m "feat(ui): add shared content card contracts"
 - Preserve Home feed initialization, filter/list-grid preference, refresh, continuation watching, Shorts shelf, and impression tracking.
 - Preserve Search query, suggestions, filters, paging, history, voice entry, and result-type behavior.
 - Preserve subscription feed/manage mode and group editing.
+- Extract the current inline group row into `internal fun SubscriptionGroupRow(group: SubscriptionGroup, canMoveUp: Boolean, canMoveDown: Boolean, onMoveUp: () -> Unit, onMoveDown: () -> Unit, onEdit: () -> Unit, onDelete: () -> Unit)`.
 
 - [ ] **Step 1: Write failing accessibility tests**
 
 ```kotlin
 @Test fun subscriptionGroupActionsHaveAccessibleTargets() {
-    composeRule.setContent { SubscriptionGroupRow(group = sampleGroup, onEdit = {}, onDelete = {}) }
-    composeRule.onNodeWithContentDescription("Edit group").assertHeightIsAtLeast(48.dp)
-    composeRule.onNodeWithContentDescription("Delete group").assertHeightIsAtLeast(48.dp)
+    val group = SubscriptionGroup(name = "Favorites", channelIds = emptyList())
+    composeRule.setContent {
+        SubscriptionGroupRow(group, false, false, {}, {}, {}, {})
+    }
+    composeRule.onNodeWithContentDescription("Edit Group").assertHeightIsAtLeast(48.dp)
+    composeRule.onNodeWithContentDescription("Delete Group").assertHeightIsAtLeast(48.dp)
 }
 ```
 
@@ -114,6 +120,7 @@ git commit -m "feat(ui): unify discovery and subscriptions surfaces"
 - Modify: `app/src/main/java/io/github/aedev/flow/ui/screens/library/LibraryScreen.kt`
 - Modify: `app/src/main/java/io/github/aedev/flow/ui/screens/history/HistoryScreen.kt`
 - Modify: `app/src/main/java/io/github/aedev/flow/ui/screens/settings/SettingsScreen.kt`
+- Modify: `app/src/main/res/values/strings.xml`
 - Modify: `app/src/main/java/io/github/aedev/flow/ui/screens/personality/FlowPersonalityScreen.kt`
 - Modify: `app/src/main/java/io/github/aedev/flow/ui/screens/personality/PersonalityDashboardSections.kt`
 - Modify: `app/src/main/java/io/github/aedev/flow/ui/screens/onboarding/OnboardingComponents.kt`
@@ -122,13 +129,18 @@ git commit -m "feat(ui): unify discovery and subscriptions surfaces"
 **Interfaces:**
 - Preserve every library/settings route and every personality export/import/reset callback.
 - Preserve onboarding's interest, channel, and import steps.
+- Extract `internal fun SettingsSearchTopBar(query: String, onQueryChange: (String) -> Unit, onClose: () -> Unit, onClear: () -> Unit)` from `SettingsScreen`.
 
 - [ ] **Step 1: Write failing Settings and onboarding tests**
 
 ```kotlin
 @Test fun settingsSearchUsesResourceBackedClearAction() {
-    composeRule.setContent { SettingsScreen(/* existing callbacks */) }
-    composeRule.onNodeWithContentDescription(context.getString(R.string.clear_search)).assertExists()
+    val label = InstrumentationRegistry.getInstrumentation()
+        .targetContext.getString(R.string.settings_search_clear)
+    composeRule.setContent {
+        SettingsSearchTopBar(query = "flow", onQueryChange = {}, onClose = {}, onClear = {})
+    }
+    composeRule.onNodeWithContentDescription(label).assertExists()
 }
 
 @Test fun onboardingContinueHas48DpTarget() {
@@ -162,7 +174,7 @@ git commit -m "feat(ui): refresh library settings and onboarding"
 
 **Files:**
 - Modify: `app/src/main/java/io/github/aedev/flow/ui/screens/channel/ChannelScreen.kt`
-- Modify: `app/src/main/java/io/github/aedev/flow/ui/screens/music/ArtistScreen.kt`
+- Modify: `app/src/main/java/io/github/aedev/flow/ui/screens/music/ArtistPage.kt`
 - Modify: `app/src/main/java/io/github/aedev/flow/ui/screens/music/PlaylistPage.kt`
 - Modify: `app/src/main/java/io/github/aedev/flow/ui/components/CommunityPostCard.kt`
 - Create: `app/src/androidTest/java/io/github/aedev/flow/ui/screens/channel/EditorialHeaderTest.kt`
@@ -197,7 +209,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add app/src/main/java/io/github/aedev/flow/ui/screens/channel/ChannelScreen.kt app/src/main/java/io/github/aedev/flow/ui/screens/music/ArtistScreen.kt app/src/main/java/io/github/aedev/flow/ui/screens/music/PlaylistPage.kt app/src/main/java/io/github/aedev/flow/ui/components/CommunityPostCard.kt app/src/androidTest/java/io/github/aedev/flow/ui/screens/channel/EditorialHeaderTest.kt
+git add app/src/main/java/io/github/aedev/flow/ui/screens/channel/ChannelScreen.kt app/src/main/java/io/github/aedev/flow/ui/screens/music/ArtistPage.kt app/src/main/java/io/github/aedev/flow/ui/screens/music/PlaylistPage.kt app/src/main/java/io/github/aedev/flow/ui/components/CommunityPostCard.kt app/src/androidTest/java/io/github/aedev/flow/ui/screens/channel/EditorialHeaderTest.kt
 git commit -m "feat(ui): unify editorial content headers"
 ```
 
