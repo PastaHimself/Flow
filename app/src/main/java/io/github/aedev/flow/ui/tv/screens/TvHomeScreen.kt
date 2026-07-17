@@ -95,6 +95,7 @@ fun TvHomeScreen(
                 TvMessageState(
                     title = stringResource(R.string.tv_error_loading),
                     message = state.error,
+                    onRetry = viewModel::retry,
                 )
             }
             state.videos.isEmpty() -> item {
