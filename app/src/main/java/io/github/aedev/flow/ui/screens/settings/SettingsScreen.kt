@@ -169,10 +169,6 @@ fun SettingsScreen(
     // Search state
     var searchQuery by remember { mutableStateOf("") }
     var isSearchActive by remember { mutableStateOf(false) }
-    val searchFocusRequester = remember { FocusRequester() }
-    LaunchedEffect(isSearchActive) {
-        if (isSearchActive) runCatching { searchFocusRequester.requestFocus() }
-    }
     BackHandler(enabled = isSearchActive) { isSearchActive = false; searchQuery = "" }
 
     val onCheckForUpdatesClick: () -> Unit = {
@@ -291,36 +287,15 @@ fun SettingsScreen(
                 color = MaterialTheme.colorScheme.background
             ) {
                 if (isSearchActive) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 4.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton(onClick = { isSearchActive = false; searchQuery = "" }) {
-                            Icon(Icons.Default.ArrowBack, "Close search")
-                        }
-                        OutlinedTextField(
-                            value = searchQuery,
-                            onValueChange = { searchQuery = it },
-                            modifier = Modifier
-                                .weight(1f)
-                                .focusRequester(searchFocusRequester),
-                            placeholder = { Text("Search settings…") },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                            keyboardActions = KeyboardActions(onSearch = {}),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color.Transparent,
-                                unfocusedBorderColor = Color.Transparent
-                            )
-                        )
-                        if (searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { searchQuery = "" }) {
-                                Icon(Icons.Outlined.Close, "Clear search")
-                            }
-                        }
-                    }
+                    SettingsSearchTopBar(
+                        query = searchQuery,
+                        onQueryChange = { searchQuery = it },
+                        onClose = {
+                            isSearchActive = false
+                            searchQuery = ""
+                        },
+                        onClear = { searchQuery = "" },
+                    )
                 } else {
                     Row(
                         modifier = Modifier
