@@ -71,10 +71,12 @@ git commit -m "feat(tv): standardize focus and navigation"
 - Modify: `app/src/main/java/io/github/aedev/flow/ui/tv/components/TvVideoCard.kt`
 - Modify: `app/src/main/java/io/github/aedev/flow/ui/tv/components/TvScreenStates.kt`
 - Create: `app/src/androidTest/java/io/github/aedev/flow/ui/tv/components/TvScreenStatesTest.kt`
+- Create: `app/src/androidTest/java/io/github/aedev/flow/ui/tv/components/TvTestFixtures.kt`
 
 **Interfaces:**
 - Preserve `TvVideoCard(video, onClick, modifier)` and `TvVideoRow(videos, onVideoClick)`.
 - Use the shared loading/empty/error state language at TV scale.
+- Define `sampleVideo` in `TvTestFixtures.kt` with `Video(id = "tv-video-1", title = "Sample TV video", channelName = "Flow", channelId = "channel-1", thumbnailUrl = "", duration = 60, viewCount = 1L, uploadDate = "")`.
 
 - [ ] **Step 1: Write failing card/state tests**
 
@@ -126,13 +128,14 @@ git commit -m "feat(tv): refresh cards and screen states"
 **Interfaces:**
 - Preserve view-model initialization and existing `onVideoClick` callbacks.
 - Preserve `TvDestination` values and current rail routing.
+- Add `TvDestination.testTag: String` and apply it to each rail item; Library uses `"tv_nav_library"`.
 
 - [ ] **Step 1: Write the failing navigation smoke test**
 
 ```kotlin
 @Test fun selectingLibraryShowsLibraryHeading() {
     composeRule.setContent { FlowTvApp() }
-    composeRule.onNodeWithText(context.getString(R.string.library)).performClick()
+    composeRule.onNodeWithTag("tv_nav_library").performClick()
     composeRule.onNodeWithText(context.getString(R.string.library)).assertExists()
 }
 ```
@@ -169,14 +172,14 @@ git commit -m "feat(tv): refresh core browse surfaces"
 **Interfaces:**
 - Preserve `TvPlayerScreen(video, viewModel, onClose)`.
 - Preserve media-key behavior in `TvPlayerKeyMapper`.
-- Add `TvPlayerAction` labels for play/pause, seek, close, captions, settings, and more actions.
+- Add `TvPlayerActionRow(onClose: () -> Unit, onPlayPause: () -> Unit, onMore: () -> Unit)` and labels for play/pause, seek, close, captions, settings, and more actions.
 
 - [ ] **Step 1: Write failing remote-control tests**
 
 ```kotlin
-@Test fun backClosesVisiblePlayerBeforeLeavingDestination() {
+@Test fun closePlayerActionInvokesCallback() {
     var closed = 0
-    composeRule.setContent { TvPlayerScreen(video = sampleVideo, viewModel = fakeViewModel, onClose = { closed++ }) }
+    composeRule.setContent { TvPlayerActionRow(onClose = { closed++ }, onPlayPause = {}, onMore = {}) }
     composeRule.onNodeWithContentDescription("Close player").performClick()
     assertEquals(1, closed)
 }
