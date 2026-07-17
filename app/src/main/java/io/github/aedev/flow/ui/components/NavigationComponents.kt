@@ -29,6 +29,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -38,6 +43,9 @@ import androidx.compose.ui.unit.sp
 
 import androidx.compose.ui.res.vectorResource
 import io.github.aedev.flow.R
+import io.github.aedev.flow.ui.theme.FlowIconSize
+import io.github.aedev.flow.ui.theme.FlowShapeTokens
+import io.github.aedev.flow.ui.theme.FlowTouchTarget
 
 private data class NavItemSpec(
     val index: Int,
@@ -191,8 +199,14 @@ private fun BottomNavItem(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
+                .heightIn(min = FlowTouchTarget.minimum)
                 .scale(scale)
-                .clip(RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(FlowShapeTokens.compact))
+                .semantics(mergeDescendants = true) {
+                    contentDescription = label
+                    role = Role.Tab
+                    this.selected = selected
+                }
                 .clickable(
                     interactionSource = interactionSource,
                     indication = ripple(bounded = true, radius = 28.dp),
@@ -202,9 +216,9 @@ private fun BottomNavItem(
         ) {
             Icon(
                 imageVector = icon,
-                contentDescription = label,
+                contentDescription = null,
                 tint = iconTint,
-                modifier = Modifier.size(22.dp)
+                modifier = Modifier.size(FlowIconSize.standard)
             )
 
             Spacer(modifier = Modifier.height(1.dp))
