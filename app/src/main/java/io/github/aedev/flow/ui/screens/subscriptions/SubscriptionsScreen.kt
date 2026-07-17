@@ -53,11 +53,14 @@ import io.github.aedev.flow.data.model.Channel
 import io.github.aedev.flow.data.model.Video
 import io.github.aedev.flow.ui.components.*
 import io.github.aedev.flow.ui.theme.extendedColors
+import io.github.aedev.flow.ui.theme.FlowTouchTarget
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.collectLatest
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import io.github.aedev.flow.ui.TabScrollEventBus
 import kotlinx.coroutines.delay
 
@@ -696,6 +699,85 @@ private fun SubscriptionSectionHeader(title: String, count: Int) {
 }
 
 @Composable
+internal fun SubscriptionGroupRow(
+    group: SubscriptionGroup,
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val moveUpLabel = stringResource(R.string.move_up)
+    val moveDownLabel = stringResource(R.string.move_down)
+    val editLabel = stringResource(R.string.edit_group)
+    val deleteLabel = stringResource(R.string.delete_group)
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = group.name,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            text = pluralStringResource(
+                R.plurals.channels_count,
+                group.channelIds.size,
+                group.channelIds.size,
+            ),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(end = 8.dp),
+        )
+        IconButton(
+            onClick = onMoveUp,
+            enabled = canMoveUp,
+            modifier = Modifier
+                .size(FlowTouchTarget.minimum)
+                .semantics { contentDescription = moveUpLabel },
+        ) {
+            Icon(Icons.Default.KeyboardArrowUp, null, modifier = Modifier.size(16.dp))
+        }
+        IconButton(
+            onClick = onMoveDown,
+            enabled = canMoveDown,
+            modifier = Modifier
+                .size(FlowTouchTarget.minimum)
+                .semantics { contentDescription = moveDownLabel },
+        ) {
+            Icon(Icons.Default.KeyboardArrowDown, null, modifier = Modifier.size(16.dp))
+        }
+        IconButton(
+            onClick = onEdit,
+            modifier = Modifier
+                .size(FlowTouchTarget.minimum)
+                .semantics { contentDescription = editLabel },
+        ) {
+            Icon(Icons.Default.Edit, null, modifier = Modifier.size(16.dp))
+        }
+        IconButton(
+            onClick = onDelete,
+            modifier = Modifier
+                .size(FlowTouchTarget.minimum)
+                .semantics { contentDescription = deleteLabel },
+        ) {
+            Icon(
+                Icons.Default.Delete,
+                null,
+                modifier = Modifier.size(16.dp),
+                tint = MaterialTheme.colorScheme.error,
+            )
+        }
+    }
+}
+
+@Composable
 private fun GroupsManagerDialog(
     groups: List<SubscriptionGroup>,
     onDismiss: () -> Unit,
@@ -719,53 +801,15 @@ private fun GroupsManagerDialog(
                     )
                 } else {
                     groups.forEachIndexed { index, group ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = group.name,
-                                style = MaterialTheme.typography.bodyLarge,
-                                modifier = Modifier.weight(1f)
-                            )
-                            Text(
-                                text = pluralStringResource(
-                                    R.plurals.channels_count,
-                                    group.channelIds.size,
-                                    group.channelIds.size
-                                ),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(end = 8.dp)
-                            )
-                            IconButton(
-                                onClick = { onMoveUp(group) },
-                                enabled = index > 0,
-                                modifier = Modifier.size(32.dp)
-                            ) {
-                                Icon(Icons.Default.KeyboardArrowUp, null, modifier = Modifier.size(16.dp))
-                            }
-                            IconButton(
-                                onClick = { onMoveDown(group) },
-                                enabled = index < groups.lastIndex,
-                                modifier = Modifier.size(32.dp)
-                            ) {
-                                Icon(Icons.Default.KeyboardArrowDown, null, modifier = Modifier.size(16.dp))
-                            }
-                            IconButton(onClick = { onEdit(group) }, modifier = Modifier.size(32.dp)) {
-                                Icon(Icons.Default.Edit, null, modifier = Modifier.size(16.dp))
-                            }
-                            IconButton(onClick = { onDelete(group) }, modifier = Modifier.size(32.dp)) {
-                                Icon(
-                                    Icons.Default.Delete,
-                                    null,
-                                    modifier = Modifier.size(16.dp),
-                                    tint = MaterialTheme.colorScheme.error
-                                )
-                            }
-                        }
+                        SubscriptionGroupRow(
+                            group = group,
+                            canMoveUp = index > 0,
+                            canMoveDown = index < groups.lastIndex,
+                            onMoveUp = { onMoveUp(group) },
+                            onMoveDown = { onMoveDown(group) },
+                            onEdit = { onEdit(group) },
+                            onDelete = { onDelete(group) },
+                        )
                     }
                 }
             }
