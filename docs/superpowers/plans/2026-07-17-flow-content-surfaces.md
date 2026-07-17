@@ -144,6 +144,7 @@ git commit -m "feat(ui): unify discovery and subscriptions surfaces"
 }
 
 @Test fun onboardingContinueHas48DpTarget() {
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
     composeRule.setContent { OnboardingBottomBar(false, false, true, {}, {}, {}) }
     composeRule.onNodeWithText(context.getString(R.string.onboarding_btn_continue)).assertHeightIsAtLeast(48.dp)
 }
