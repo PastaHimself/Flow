@@ -46,6 +46,7 @@ import io.github.aedev.flow.player.GlobalPlayerState
 import io.github.aedev.flow.player.SleepTimerManager
 import io.github.aedev.flow.ui.components.DonationPromptHost
 import io.github.aedev.flow.ui.components.FloatingBottomNavBar
+import io.github.aedev.flow.ui.components.FlowNavigationRail
 import io.github.aedev.flow.ui.components.MusicPlayerBottomSheet
 import io.github.aedev.flow.ui.components.MusicPlayerSheetState
 import io.github.aedev.flow.ui.components.PersistentMiniMusicPlayer
@@ -254,6 +255,7 @@ fun FlowApp(
     }
     
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val useNavigationRail = maxWidth >= 600.dp
         val density = LocalDensity.current
         val screenHeightPx = constraints.maxHeight.toFloat()
         
@@ -447,6 +449,7 @@ fun FlowApp(
         )
         val bottomNavContentPadding by animateDpAsState(
             targetValue = if (
+                !useNavigationRail &&
                 !bottomNavHideOnScroll &&
                 !isInPipMode &&
                 showBottomNav.value &&
@@ -483,6 +486,7 @@ fun FlowApp(
             Box(
                 modifier = Modifier
                     .padding(if (isInPipMode) PaddingValues(0.dp) else contentPadding)
+                    .padding(start = if (useNavigationRail) 80.dp else 0.dp)
                     .padding(bottom = bottomNavContentPadding)
                     .padding(bottom = musicMiniPlayerContentPadding.coerceAtLeast(0.dp))
                     .nestedScroll(nestedScrollConnection)
@@ -561,7 +565,7 @@ fun FlowApp(
 
         // ── Floating bottom nav bar overlay ──────────────────────────────────
         AnimatedVisibility(
-            visible = !isInPipMode && showBottomNav.value && isNavScrolledVisible,
+            visible = !useNavigationRail && !isInPipMode && showBottomNav.value && isNavScrolledVisible,
             modifier = Modifier.align(Alignment.BottomCenter),
             enter = slideInVertically(
                 initialOffsetY = { it },
@@ -607,7 +611,7 @@ fun FlowApp(
     }
 
     val animatedBottomPaddingRaw by animateDpAsState(
-        targetValue = if (!isInPipMode && showBottomNav.value && isNavScrolledVisible) {
+        targetValue = if (!useNavigationRail && !isInPipMode && showBottomNav.value && isNavScrolledVisible) {
             bottomNavContentHeightDp + with(density) { navBarBottomInset.toDp() }
         } else {
             with(density) { navBarBottomInset.toDp() }
