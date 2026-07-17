@@ -40,6 +40,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -64,6 +68,8 @@ import io.github.aedev.flow.ui.components.playbackSpeedOptions
 import io.github.aedev.flow.ui.components.playbackSpeedSliderPresets
 import io.github.aedev.flow.ui.components.rememberFlowSheetState
 import io.github.aedev.flow.ui.components.rememberDateDisplaySettings
+import io.github.aedev.flow.ui.theme.FlowIconSize
+import io.github.aedev.flow.ui.theme.FlowTouchTarget
 import io.github.aedev.flow.ui.screens.player.components.PlayerQualitySelectorContent
 import io.github.aedev.flow.ui.screens.player.components.PlayerQualitySelectorOption
 import io.github.aedev.flow.ui.screens.player.components.SeekbarWithPreview
@@ -1654,7 +1660,11 @@ fun ShortsActionButton(
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
-            .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+            .sizeIn(minWidth = FlowTouchTarget.minimum, minHeight = FlowTouchTarget.minimum)
+            .semantics(mergeDescendants = true) {
+                this.contentDescription = contentDescription
+                role = Role.Button
+            }
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -1664,9 +1674,9 @@ fun ShortsActionButton(
     ) {
         Icon(
             imageVector = icon,
-            contentDescription = contentDescription,
+            contentDescription = null,
             tint = tint,
-            modifier = Modifier.size(26.dp)
+            modifier = Modifier.size(FlowIconSize.standard)
         )
         if (text.isNotBlank()) {
             Spacer(modifier = Modifier.height(2.dp))
