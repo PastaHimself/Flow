@@ -90,7 +90,14 @@ fun PersistentMiniMusicPlayer(
         modifier = modifier
     ) {
         currentTrack?.let { track ->
-            Box(
+            MiniPlayerLayout(
+                title = track.title,
+                artist = track.artist,
+                artworkUrl = track.highResThumbnailUrl,
+                progress = animatedProgress,
+                isPlaying = playerState.isPlaying,
+                onExpand = onExpandClick,
+                onPlayPause = { EnhancedMusicPlayerManager.togglePlayPause() },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 10.dp, vertical = 4.dp)
@@ -107,191 +114,10 @@ fun PersistentMiniMusicPlayer(
                             },
                             onHorizontalDrag = { _, dragAmount ->
                                 offsetX += dragAmount
-                            }
+                            },
                         )
-                    }
-            ) {
-                // Container 
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(64.dp)
-                        .shadow(16.dp, RoundedCornerShape(18.dp), ambientColor = Color.Black.copy(alpha = 0.5f), spotColor = Color.Black.copy(alpha = 0.5f))
-                        .clickable(onClick = onExpandClick),
-                    shape = RoundedCornerShape(18.dp),
-                    color = MaterialTheme.colorScheme.surface
-                ) {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        AsyncImage(
-                            model = track.highResThumbnailUrl,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .blur(40.dp),
-                            contentScale = ContentScale.Crop,
-                            alpha = 0.25f
-                        )
-
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.85f))
-                        )
-
-                        // Progress 
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(3.dp)
-                                .align(Alignment.BottomCenter)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth(animatedProgress)
-                                    .fillMaxHeight()
-                                    .background(MaterialTheme.colorScheme.primary)
-                            )
-                        }
-
-                        // Content row
-                        Row(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(start = 10.dp, end = 6.dp, top = 6.dp, bottom = 8.5.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            // Album art + info
-                            Row(
-                                modifier = Modifier.weight(1f),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                // Album art
-                                Box(
-                                    modifier = Modifier
-                                        .size(48.dp)
-                                        .clip(RoundedCornerShape(12.dp))
-                                ) {
-                                    AsyncImage(
-                                        model = track.highResThumbnailUrl,
-                                        contentDescription = stringResource(R.string.album_art),
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .clip(RoundedCornerShape(12.dp)),
-                                        contentScale = ContentScale.Crop
-                                    )
-                                    
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f), RoundedCornerShape(12.dp))
-                                    )
-
-                                    if (playerState.isPlaying) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(48.dp)
-                                                .background(Color.Black.copy(alpha = 0.35f)),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            MiniWaveform()
-                                        }
-                                    }
-                                }
-
-                                // Track info
-                                Column(
-                                    modifier = Modifier.weight(1f),
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    Text(
-                                        text = track.title,
-                                        style = MaterialTheme.typography.titleMedium.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 15.sp,
-                                            letterSpacing = (-0.2).sp
-                                        ),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text(
-                                        text = track.artist,
-                                        style = MaterialTheme.typography.bodyMedium.copy(
-                                            fontSize = 13.sp,
-                                            fontWeight = FontWeight.Medium
-                                        ),
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
-                            }
-
-                            // Controls
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                // Play/Pause
-                                Box(
-                                    modifier = Modifier
-                                        .size(44.dp)
-                                        .scale(animatedScale)
-                                        .clip(CircleShape)
-                                        .background(MaterialTheme.colorScheme.primary)
-                                        .clickable {
-                                            playPauseScale = 0.85f
-                                            EnhancedMusicPlayerManager.togglePlayPause()
-                                            scope.launch {
-                                                delay(100)
-                                                playPauseScale = 1f
-                                            }
-                                        },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    if (playerState.isBuffering) {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier.size(20.dp),
-                                            strokeWidth = 2.dp,
-                                            color = MaterialTheme.colorScheme.onPrimary
-                                        )
-                                    } else {
-                                        Icon(
-                                            imageVector = if (playerState.isPlaying)
-                                                Icons.Filled.Pause
-                                            else
-                                                Icons.Filled.PlayArrow,
-                                            contentDescription = if (playerState.isPlaying) stringResource(R.string.pause) else stringResource(R.string.play),
-                                            modifier = Modifier.size(24.dp),
-                                            tint = MaterialTheme.colorScheme.onPrimary
-                                        )
-                                    }
-                                }
-
-                                // Next
-                                IconButton(
-                                    onClick = { EnhancedMusicPlayerManager.playNext() },
-                                    modifier = Modifier.size(38.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.SkipNext,
-                                        contentDescription = stringResource(R.string.next),
-                                        modifier = Modifier.size(22.dp),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
+                    },
+            )
             }
         }
     }
