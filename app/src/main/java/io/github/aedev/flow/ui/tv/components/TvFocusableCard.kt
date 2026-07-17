@@ -16,6 +16,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
+import io.github.aedev.flow.ui.theme.FlowShapeTokens
+
+/** Shared focus treatment for TV cards and controls. */
+object TvFocusStyle {
+    const val focusedScale = 1.05f
+    const val unfocusedScale = 1f
+    val focusedBorderWidth = 2.dp
+    val focusedElevation = 8.dp
+    val unfocusedElevation = 1.dp
+}
 
 /** Material 3 card with a visible ten-foot focus state. */
 @Composable
@@ -26,7 +36,7 @@ fun TvFocusableCard(
 ) {
     var focused by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(
-        targetValue = if (focused) 1.05f else 1f,
+        targetValue = if (focused) TvFocusStyle.focusedScale else TvFocusStyle.unfocusedScale,
         label = "tvCardScale",
     )
 
@@ -51,12 +61,12 @@ fun TvFocusableCard(
             },
         ),
         border = if (focused) {
-            BorderStroke(2.dp, MaterialTheme.colorScheme.outline)
+            BorderStroke(TvFocusStyle.focusedBorderWidth, MaterialTheme.colorScheme.outline)
         } else {
             null
         },
         elevation = CardDefaults.cardElevation(
-            defaultElevation = if (focused) 8.dp else 1.dp,
+            defaultElevation = if (focused) TvFocusStyle.focusedElevation else TvFocusStyle.unfocusedElevation,
         ),
     ) {
         Box(content = content)
