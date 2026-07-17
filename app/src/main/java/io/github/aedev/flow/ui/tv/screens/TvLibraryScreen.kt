@@ -24,6 +24,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.aedev.flow.R
@@ -79,7 +83,13 @@ fun TvLibraryScreen(
         )
         LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             items(TvLibrarySection.entries) { section ->
-                TvFocusableCard(onClick = { selected = section }) {
+                TvFocusableCard(
+                    onClick = { selected = section },
+                    modifier = Modifier.semantics {
+                        role = Role.Tab
+                        this.selected = selected == section
+                    },
+                ) {
                     Text(
                         text = stringResource(section.titleRes),
                         modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
