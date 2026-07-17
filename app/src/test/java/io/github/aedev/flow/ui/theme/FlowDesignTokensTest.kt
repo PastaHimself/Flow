@@ -17,4 +17,10 @@ class FlowDesignTokensTest {
             FlowSpacing.all,
         )
     }
+
+    @Test
+    fun `motion durations keep feedback faster than shell changes`() {
+        assertEquals(150, FlowMotion.feedbackDurationMillis)
+        assertEquals(240, FlowMotion.shellDurationMillis)
+    }
 }
