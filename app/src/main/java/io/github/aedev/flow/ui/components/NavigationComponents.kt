@@ -267,7 +267,7 @@ fun FlowNavigationRail(
             if (isSearchEnabled) add(NavItemSpec(5, Icons.Filled.Search, Icons.Outlined.Search, R.string.nav_search))
             if (isCategoriesEnabled) add(NavItemSpec(6, Icons.Filled.Explore, Icons.Outlined.Explore, R.string.nav_explore))
         }
-        val order = navOrder.withIndex().associate { (item, index) -> item to index }
+        val order = navOrder.withIndex().associate { it.value to it.index }
         items.sortedBy { order[it.index] ?: Int.MAX_VALUE }
     }
 
