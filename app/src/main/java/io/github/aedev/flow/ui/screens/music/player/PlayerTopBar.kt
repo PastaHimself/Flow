@@ -13,6 +13,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -20,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.aedev.flow.R
 import io.github.aedev.flow.player.SleepTimerManager
+import io.github.aedev.flow.ui.theme.FlowTouchTarget
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,31 +60,49 @@ fun PlayerTopBar(
             }
         },
         navigationIcon = {
-            IconButton(onClick = onBackClick) {
+            val closeLabel = stringResource(R.string.close)
+            IconButton(
+                modifier = Modifier
+                    .size(FlowTouchTarget.minimum)
+                    .semantics { contentDescription = closeLabel },
+                onClick = onBackClick,
+            ) {
                 Icon(
                     imageVector = Icons.Filled.KeyboardArrowDown,
-                    contentDescription = stringResource(R.string.close),
+                    contentDescription = null,
                     modifier = Modifier.size(32.dp),
-                    tint = contentColor
+                    tint = contentColor,
                 )
             }
         },
         actions = {
             if (showSleepTimerAction) {
-                IconButton(onClick = onSleepTimerClick) {
+                val sleepTimerLabel = stringResource(R.string.sleep_timer)
+                IconButton(
+                    modifier = Modifier
+                        .size(FlowTouchTarget.minimum)
+                        .semantics { contentDescription = sleepTimerLabel },
+                    onClick = onSleepTimerClick,
+                ) {
                     Icon(
                         imageVector = Icons.Outlined.Bedtime,
-                        contentDescription = stringResource(R.string.sleep_timer),
+                        contentDescription = null,
                         tint = if (SleepTimerManager.isActive) activeColor else contentColor,
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(22.dp),
                     )
                 }
             }
-            IconButton(onClick = onMoreOptionsClick) {
+            val moreOptionsLabel = stringResource(R.string.more_options)
+            IconButton(
+                modifier = Modifier
+                    .size(FlowTouchTarget.minimum)
+                    .semantics { contentDescription = moreOptionsLabel },
+                onClick = onMoreOptionsClick,
+            ) {
                 Icon(
-                    Icons.Outlined.MoreVert,
-                    stringResource(R.string.more_options),
-                    tint = contentColor
+                    imageVector = Icons.Outlined.MoreVert,
+                    contentDescription = null,
+                    tint = contentColor,
                 )
             }
         },
