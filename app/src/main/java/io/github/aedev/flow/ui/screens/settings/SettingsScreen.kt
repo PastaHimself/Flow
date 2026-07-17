@@ -338,7 +338,7 @@ fun SettingsScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "No settings found for \"$searchQuery\"",
+                                text = stringResource(R.string.settings_search_no_results, searchQuery),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
