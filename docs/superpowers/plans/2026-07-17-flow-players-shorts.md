@@ -115,6 +115,7 @@ git commit -m "feat(player): clarify video player controls"
 **Interfaces:**
 - Preserve `MusicPlayerViewModel`, lyrics, queue, device output, background-style preference, and artwork loading.
 - Add a pure `MusicArtworkPalettePolicy.shouldExtract(isExpanded: Boolean, backgroundStyle: MusicPlayerBackgroundStyle): Boolean`.
+- Keep `PlayerTopBar(playingFrom, onBackClick, onSleepTimerClick, onMoreOptionsClick, ...)` as the public top-bar contract.
 
 - [ ] **Step 1: Write failing policy and accessibility tests**
 
@@ -124,9 +125,11 @@ git commit -m "feat(player): clarify video player controls"
     assertTrue(MusicArtworkPalettePolicy.shouldExtract(true, MusicPlayerBackgroundStyle.BLUR_GRADIENT))
 }
 
-@Test fun musicPlayerQueueControlHasAccessibleTarget() {
-    composeRule.setContent { MusicPlayerTopBar(onQueue = {}, onBack = {}) }
-    composeRule.onNodeWithContentDescription("Queue").assertHeightIsAtLeast(48.dp)
+@Test fun musicPlayerMoreControlHasAccessibleTarget() {
+    composeRule.setContent {
+        PlayerTopBar(playingFrom = "Flow", onBackClick = {}, onMoreOptionsClick = {})
+    }
+    composeRule.onNodeWithContentDescription("More options").assertHeightIsAtLeast(48.dp)
 }
 ```
 
