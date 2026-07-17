@@ -312,7 +312,7 @@ fun SettingsScreen(
                             modifier = Modifier.weight(1f)
                         )
                         IconButton(onClick = { isSearchActive = true }) {
-                            Icon(Icons.Outlined.Search, "Search settings")
+                            Icon(Icons.Outlined.Search, stringResource(R.string.settings_search_open))
                         }
                     }
                 }
