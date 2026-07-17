@@ -42,6 +42,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.zIndex
 import io.github.aedev.flow.R
+import io.github.aedev.flow.ui.theme.FlowTouchTarget
 import io.github.aedev.flow.player.CastHelper
 import io.github.aedev.flow.data.local.DEFAULT_FULLSCREEN_SEEKBAR_PADDING_DP
 import io.github.aedev.flow.data.local.PlayerPreferences
@@ -53,7 +54,7 @@ import kotlin.math.abs
 
 private const val LIVE_SCRUB_SEEK_INTERVAL_MS = 80L
 private const val LIVE_SCRUB_IMMEDIATE_DELTA_MS = 750L
-private val OverlayActionButtonSize = 40.dp
+internal val OverlayActionButtonSize = FlowTouchTarget.minimum
 private val OverlayActionIconSize = 24.dp
 private val OverlayActionSpacing = 8.dp
 private val OverlayPillHeight = 28.dp
