@@ -21,13 +21,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import io.github.aedev.flow.R
-import io.github.aedev.flow.ui.theme.FlowTouchTarget
 
 @Composable
 internal fun SettingsSearchTopBar(
@@ -52,9 +52,7 @@ internal fun SettingsSearchTopBar(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(
-            modifier = Modifier
-                .semantics { contentDescription = closeLabel }
-                .then(Modifier),
+            modifier = Modifier.semantics { contentDescription = closeLabel },
             onClick = onClose,
         ) {
             Icon(Icons.Default.ArrowBack, contentDescription = null)
@@ -70,8 +68,8 @@ internal fun SettingsSearchTopBar(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(onSearch = {}),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MaterialTheme.colorScheme.transparent,
-                unfocusedBorderColor = MaterialTheme.colorScheme.transparent,
+                focusedBorderColor = Color.Transparent,
+                unfocusedBorderColor = Color.Transparent,
             ),
         )
         if (query.isNotEmpty()) {
