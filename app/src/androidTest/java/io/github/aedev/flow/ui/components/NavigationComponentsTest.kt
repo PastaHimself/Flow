@@ -3,6 +3,7 @@ package io.github.aedev.flow.ui.components
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.platform.app.InstrumentationRegistry
 import io.github.aedev.flow.R
