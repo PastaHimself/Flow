@@ -464,6 +464,28 @@ fun FlowApp(
             label = "bottomNavContentPadding"
         )
 
+        val navigateToDestination: (Int) -> Unit = { index ->
+            val route = navRouteForIndex(index)
+            val activeRoute = navController.currentBackStackEntry?.destination?.route
+            if (activeRoute == route) {
+                TabScrollEventBus.emitScrollToTop(route)
+            } else if (route == defaultStartRoute) {
+                selectedBottomNavIndex.intValue = index
+                currentRoute.value = route
+                navController.popBackStack(defaultStartRoute, inclusive = false)
+            } else {
+                selectedBottomNavIndex.intValue = index
+                currentRoute.value = route
+                navController.navigate(route) {
+                    popUpTo(defaultStartRoute) {
+                        saveState = true
+                    }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            }
+        }
+
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             containerColor = if (isInPipMode) androidx.compose.ui.graphics.Color.Black else androidx.compose.material3.MaterialTheme.colorScheme.background,
@@ -584,28 +606,23 @@ fun FlowApp(
                 isSearchEnabled = isSearchNavigationEnabled,
                 isCategoriesEnabled = isCategoriesNavigationEnabled,
                 navOrder = navTabOrder,
-                onItemSelected = { index ->
-                    val route = navRouteForIndex(index)
+                onItemSelected = navigateToDestination
+            )
+        }
 
-                    val activeRoute = navController.currentBackStackEntry?.destination?.route
-                    if (activeRoute == route) {
-                        TabScrollEventBus.emitScrollToTop(route)
-                    } else if (route == defaultStartRoute) {
-                        selectedBottomNavIndex.intValue = index
-                        currentRoute.value = route
-                        navController.popBackStack(defaultStartRoute, inclusive = false)
-                    } else {
-                        selectedBottomNavIndex.intValue = index
-                        currentRoute.value = route
-                        navController.navigate(route) {
-                            popUpTo(defaultStartRoute) {
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    }
-                }
+        if (useNavigationRail && !isInPipMode && showBottomNav.value) {
+            FlowNavigationRail(
+                selectedIndex = selectedBottomNavIndex.intValue,
+                onItemSelected = navigateToDestination,
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .align(Alignment.CenterStart),
+                isHomeEnabled = isHomeNavigationEnabled,
+                isShortsEnabled = isShortsNavigationEnabled,
+                isMusicEnabled = isMusicNavigationEnabled,
+                isSearchEnabled = isSearchNavigationEnabled,
+                isCategoriesEnabled = isCategoriesNavigationEnabled,
+                navOrder = navTabOrder,
             )
         }
     }
