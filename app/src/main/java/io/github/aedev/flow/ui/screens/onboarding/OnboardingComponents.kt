@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -37,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.aedev.flow.R
+import io.github.aedev.flow.ui.theme.FlowTouchTarget
 
 @Composable
 internal fun StepIndicatorBar(currentStep: OnboardingStep) {
@@ -144,13 +146,14 @@ internal fun OnboardingBottomBar(
                                 indication = null,
                                 onClick = onSkip
                             )
+                            .heightIn(min = FlowTouchTarget.minimum)
                             .padding(horizontal = 12.dp, vertical = 8.dp)
                     )
 
                     Button(
                         onClick = onNext,
                         enabled = canAdvance,
-                        modifier = Modifier.height(48.dp),
+                        modifier = Modifier.height(FlowTouchTarget.minimum),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary,
