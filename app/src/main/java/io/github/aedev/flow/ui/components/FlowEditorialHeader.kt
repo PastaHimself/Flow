@@ -35,6 +35,7 @@ fun FlowEditorialHeader(
     subtitle: String? = null,
     avatarUrl: String? = null,
     actions: @Composable RowScope.() -> Unit = {},
+    showMetadata: Boolean = true,
     tabs: List<String> = emptyList(),
     selectedTab: Int? = null,
     onTabSelected: ((Int) -> Unit)? = null,
@@ -42,13 +43,14 @@ fun FlowEditorialHeader(
     val activeTab = selectedTab?.coerceIn(0, (tabs.size - 1).coerceAtLeast(0)) ?: 0
 
     Column(modifier = modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = FlowSpacing.md, vertical = FlowSpacing.lg),
-            horizontalArrangement = Arrangement.spacedBy(FlowSpacing.sm),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+        if (showMetadata) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = FlowSpacing.md, vertical = FlowSpacing.lg),
+                horizontalArrangement = Arrangement.spacedBy(FlowSpacing.sm),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
             if (!avatarUrl.isNullOrBlank()) {
                 AsyncImage(
                     model = avatarUrl,
@@ -82,10 +84,11 @@ fun FlowEditorialHeader(
                 }
             }
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(FlowSpacing.xs),
-                content = actions,
-            )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(FlowSpacing.xs),
+                    content = actions,
+                )
+            }
         }
 
         if (tabs.isNotEmpty()) {
