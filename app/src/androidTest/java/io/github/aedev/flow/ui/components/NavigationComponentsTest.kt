@@ -39,4 +39,25 @@ class NavigationComponentsTest {
 
         assertTrue(abs((centers[1] - centers[0]) - (centers[2] - centers[1])) < 1f)
     }
+
+    @Test
+    fun selectedDestinationUsesAnAccessibleTabTarget() {
+        composeRule.setContent {
+            MaterialTheme {
+                FloatingBottomNavBar(
+                    selectedIndex = 0,
+                    onItemSelected = {},
+                    isShortsEnabled = false,
+                    isMusicEnabled = false,
+                )
+            }
+        }
+
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val bounds = composeRule
+            .onNodeWithContentDescription(context.getString(R.string.nav_home))
+            .getUnclippedBoundsInRoot()
+
+        assertTrue(bounds.height.value >= 48f)
+    }
 }
