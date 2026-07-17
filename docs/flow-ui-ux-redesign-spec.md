@@ -2,7 +2,7 @@
 
 **Status:** Design approved; implementation plan pending written-spec review  
 **Repository:** `PastaHimself/Flow` only  
-**Branch:** `codex/flow-ui-ux-revamp`  
+**Branch:** `flow-ui-ux-revamp`  
 **Design baseline:** `1f9292d75c5062f13cdab57584cc2b60b1e0ef48`  
 **Platforms:** Android phone, tablet, foldable, landscape, and Android TV
 
