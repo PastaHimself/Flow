@@ -97,7 +97,7 @@ git commit -m "feat(ui): add shared Flow design tokens"
 @Test fun errorStateExposesRetryAction() {
     var retries = 0
     composeRule.setContent { FlowErrorState(message = "Offline", onRetry = { retries++ }) }
-    composeRule.onNodeWithContentDescription("Retry").performClick()
+    composeRule.onNodeWithText("Retry").performClick()
     assertEquals(1, retries)
 }
 ```
@@ -158,8 +158,10 @@ git commit -m "feat(ui): add accessible screen state components"
 
 ```kotlin
 @Test fun selectedNavigationItemHas48DpTargetAndSelectedSemantics() {
+    val homeLabel = InstrumentationRegistry.getInstrumentation()
+        .targetContext.getString(R.string.nav_home)
     composeRule.setContent { FloatingBottomNavBar(selectedIndex = 0, onItemSelected = {}) }
-    composeRule.onNodeWithContentDescription(context.getString(R.string.nav_home))
+    composeRule.onNodeWithContentDescription(homeLabel)
         .assertIsSelected()
         .assertHeightIsAtLeast(48.dp)
 }
@@ -257,6 +259,6 @@ Check Home, Shorts, Music, Subscriptions, Library, Search/More, rotation, light/
 - [ ] **Step 4: Commit verification corrections**
 
 ```bash
-git add <corrected-files>
+git add app/src/main/java/io/github/aedev/flow/ui/theme app/src/main/java/io/github/aedev/flow/ui/components app/src/main/java/io/github/aedev/flow/ui/FlowApp.kt app/src/test app/src/androidTest
 git commit -m "test(ui): verify adaptive shell foundations"
 ```
