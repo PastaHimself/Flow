@@ -134,6 +134,7 @@ git commit -m "feat(tv): refresh cards and screen states"
 
 ```kotlin
 @Test fun selectingLibraryShowsLibraryHeading() {
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
     composeRule.setContent { FlowTvApp() }
     composeRule.onNodeWithTag("tv_nav_library").performClick()
     composeRule.onNodeWithText(context.getString(R.string.library)).assertExists()
