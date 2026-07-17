@@ -32,6 +32,8 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -121,37 +123,20 @@ fun TvPlayerScreen(
                 progress = { if (duration > 0L) (position.toFloat() / duration.toFloat()).coerceIn(0f, 1f) else 0f },
                 modifier = Modifier.fillMaxWidth(),
             )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                PlayerActionCard(
-                    label = stringResource(R.string.tv_player_rewind),
-                    icon = { Icon(Icons.Outlined.Replay10, contentDescription = null) },
-                    onClick = { perform(TvPlayerAction.SEEK_BACK) },
-                )
-                PlayerActionCard(
-                    label = if (playerState.isPlaying) stringResource(R.string.pause) else stringResource(R.string.play),
-                    icon = {
-                        Icon(
-                            imageVector = if (playerState.isPlaying) Icons.Outlined.Pause else Icons.Outlined.PlayArrow,
-                            contentDescription = null,
-                        )
-                    },
-                    onClick = { perform(TvPlayerAction.TOGGLE_PLAYBACK) },
-                )
-                PlayerActionCard(
-                    label = stringResource(R.string.tv_player_fast_forward),
-                    icon = { Icon(Icons.Outlined.FastForward, contentDescription = null) },
-                    onClick = { perform(TvPlayerAction.SEEK_FORWARD) },
-                )
-                PlayerActionCard(
-                    label = stringResource(R.string.tv_player_close),
-                    icon = { Icon(Icons.Outlined.Close, contentDescription = null) },
-                    onClick = onClose,
-                )
-            }
+            TvPlayerActionRow(
+                onClose = onClose,
+                onPlayPause = { perform(TvPlayerAction.TOGGLE_PLAYBACK) },
+                onMore = {},
+                onSeekBack = { perform(TvPlayerAction.SEEK_BACK) },
+                onSeekForward = { perform(TvPlayerAction.SEEK_FORWARD) },
+                playPauseLabel = if (playerState.isPlaying) {
+                    stringResource(R.string.pause)
+                } else {
+                    stringResource(R.string.play)
+                },
+                isPlaying = playerState.isPlaying,
+                showMore = false,
+            )
         }
 
         if (uiState.isLoading || playerState.isBuffering) {
@@ -172,6 +157,63 @@ fun TvPlayerScreen(
 }
 
 @Composable
+internal fun TvPlayerActionRow(
+    onClose: () -> Unit,
+    onPlayPause: () -> Unit,
+    onMore: () -> Unit,
+    modifier: Modifier = Modifier,
+    onSeekBack: (() -> Unit)? = null,
+    onSeekForward: (() -> Unit)? = null,
+    playPauseLabel: String? = null,
+    isPlaying: Boolean = false,
+    showMore: Boolean = true,
+) {
+    val resolvedPlayPauseLabel = playPauseLabel ?: stringResource(R.string.play)
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (onSeekBack != null) {
+            PlayerActionCard(
+                label = stringResource(R.string.tv_player_rewind),
+                icon = { Icon(Icons.Outlined.Replay10, contentDescription = null) },
+                onClick = onSeekBack,
+            )
+        }
+        PlayerActionCard(
+            label = resolvedPlayPauseLabel,
+            icon = {
+                Icon(
+                    imageVector = if (isPlaying) Icons.Outlined.Pause else Icons.Outlined.PlayArrow,
+                    contentDescription = null,
+                )
+            },
+            onClick = onPlayPause,
+        )
+        if (onSeekForward != null) {
+            PlayerActionCard(
+                label = stringResource(R.string.tv_player_fast_forward),
+                icon = { Icon(Icons.Outlined.FastForward, contentDescription = null) },
+                onClick = onSeekForward,
+            )
+        }
+        if (showMore) {
+            PlayerActionCard(
+                label = stringResource(R.string.more_options),
+                icon = { Icon(Icons.Outlined.MoreVert, contentDescription = null) },
+                onClick = onMore,
+            )
+        }
+        PlayerActionCard(
+            label = stringResource(R.string.tv_player_close),
+            icon = { Icon(Icons.Outlined.Close, contentDescription = null) },
+            onClick = onClose,
+        )
+    }
+}
+
+@Composable
 private fun PlayerActionCard(
     label: String,
     icon: @Composable () -> Unit,
@@ -179,7 +221,9 @@ private fun PlayerActionCard(
 ) {
     TvFocusableCard(
         onClick = onClick,
-        modifier = Modifier.padding(horizontal = 8.dp),
+        modifier = Modifier
+            .padding(horizontal = 8.dp)
+            .semantics { contentDescription = label },
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
