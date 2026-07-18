@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -68,7 +69,6 @@ import io.github.aedev.flow.ui.components.playbackSpeedSliderPresets
 import io.github.aedev.flow.ui.components.rememberFlowSheetState
 import io.github.aedev.flow.ui.components.rememberDateDisplaySettings
 import io.github.aedev.flow.ui.theme.FlowIconSize
-import io.github.aedev.flow.ui.theme.FlowMotion
 import io.github.aedev.flow.ui.theme.FlowTouchTarget
 import io.github.aedev.flow.ui.screens.player.components.PlayerQualitySelectorContent
 import io.github.aedev.flow.ui.screens.player.components.PlayerQualitySelectorOption
@@ -78,6 +78,11 @@ import io.github.aedev.flow.ui.screens.player.components.rememberAmbientFrame
 import io.github.aedev.flow.utils.DateContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
+private val shortsOverlayTextShadow = Shadow(
+    color = Color.Black,
+    blurRadius = 4f
+)
 
 @Composable
 fun ShortVideoPage(
@@ -188,24 +193,9 @@ fun ShortVideoPage(
         }
     }
     val ambientActive = isActive && ambientModeEnabled
-    val ambientFrame = rememberAmbientFrame(
-        playerView = playerView,
-        active = isActive,
-        includeAmbientVisuals = ambientActive
-    ) {
+    val ambientFrame = rememberAmbientFrame(playerView, ambientActive) {
         playerPool.getPlayerForIndex(pageIndex)?.isPlaying == true
     }
-    val metadataForegroundColor by animateColorAsState(
-        targetValue = ambientFrame.metadataForeground ?: Color.White,
-        animationSpec = FlowMotion.shellSpec(),
-        label = "shorts_metadata_foreground"
-    )
-    val actionsForegroundColor by animateColorAsState(
-        targetValue = ambientFrame.actionsForeground ?: Color.White,
-        animationSpec = FlowMotion.shellSpec(),
-        label = "shorts_actions_foreground"
-    )
-
     // Register a MediaSessionCompat so earphone / Bluetooth media buttons (play-pause)
     // work while a short is active. Re-created every time isActive changes; released on dispose.
     DisposableEffect(isActive) {
@@ -637,9 +627,11 @@ fun ShortVideoPage(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = video.channelName,
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            shadow = shortsOverlayTextShadow
+                        ),
                         fontWeight = FontWeight.Bold,
-                        color = metadataForegroundColor,
+                        color = Color.White,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f, fill = false)
@@ -671,18 +663,18 @@ fun ShortVideoPage(
                             },
                             shape = RoundedCornerShape(10.dp),
                             color = Color.Transparent,
-                            contentColor = if (isSubscribed) metadataForegroundColor else onPrimaryColor,
+                            contentColor = if (isSubscribed) Color.White else onPrimaryColor,
                             modifier = Modifier.size(48.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Surface(
                                     shape = RoundedCornerShape(10.dp),
                                     color = if (isSubscribed) Color.Transparent else primaryColor,
-                                    contentColor = if (isSubscribed) metadataForegroundColor else onPrimaryColor,
+                                    contentColor = if (isSubscribed) Color.White else onPrimaryColor,
                                     border = if (isSubscribed) {
                                         androidx.compose.foundation.BorderStroke(
                                             1.dp,
-                                            metadataForegroundColor
+                                            Color.White
                                         )
                                     } else {
                                         null
@@ -690,12 +682,12 @@ fun ShortVideoPage(
                                     modifier = Modifier.size(32.dp)
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
-                                        Icon(
+                                        ShortsOverlayIcon(
                                             imageVector = if (isSubscribed) Icons.Default.Check else Icons.Default.Add,
                                             contentDescription = subscriptionDescription,
                                             modifier = Modifier.size(22.dp),
                                             tint = if (isSubscribed) {
-                                                metadataForegroundColor
+                                                Color.White
                                             } else {
                                                 onPrimaryColor
                                             }
@@ -741,18 +733,20 @@ fun ShortVideoPage(
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             },
                             colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = metadataForegroundColor
+                                contentColor = Color.White
                             ),
                             border = androidx.compose.foundation.BorderStroke(
-                                1.dp, metadataForegroundColor
+                                1.dp, Color.White
                             ),
                             contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
                             modifier = Modifier.height(28.dp)
                         ) {
                             Text(
                                 stringResource(R.string.subscribed),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = metadataForegroundColor
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    shadow = shortsOverlayTextShadow
+                                ),
+                                color = Color.White
                             )
                         }
                     }
@@ -762,8 +756,10 @@ fun ShortVideoPage(
 
                 Text(
                     text = video.title,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = metadataForegroundColor,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        shadow = shortsOverlayTextShadow
+                    ),
+                    color = Color.White,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.clickable(onClick = onDescriptionClick)
@@ -778,15 +774,19 @@ fun ShortVideoPage(
                                     R.string.views_template,
                                     formatViewCount(video.viewCount)
                                 ),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = metadataForegroundColor
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    shadow = shortsOverlayTextShadow
+                                ),
+                                color = Color.White
                             )
                         }
                         if (video.viewCount > 0 && video.uploadDate.isNotBlank()) {
                             Text(
                                 text = stringResource(R.string.video_metadata_short_template, "", ""),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = metadataForegroundColor
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    shadow = shortsOverlayTextShadow
+                                ),
+                                color = Color.White
                             )
                         }
                         if (video.uploadDate.isNotBlank()) {
@@ -796,8 +796,10 @@ fun ShortVideoPage(
                                     DateContext.WATCH,
                                     video.timestamp
                                 ),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = metadataForegroundColor
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    shadow = shortsOverlayTextShadow
+                                ),
+                                color = Color.White
                             )
                         }
                     }
@@ -816,8 +818,7 @@ fun ShortVideoPage(
                         video.toShortVideo().likeCountText.takeIf { it.isNotBlank() } ?: stringResource(R.string.action_like)
                     },
                     contentDescription = stringResource(R.string.action_like),
-                    tint = if (isLiked) Color.Red else actionsForegroundColor,
-                    textColor = actionsForegroundColor,
+                    tint = if (isLiked) Color.Red else Color.White,
                     onClick = {
                         scope.launch { viewModel.toggleLike(video.toShortVideo()) }
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -832,8 +833,6 @@ fun ShortVideoPage(
                         video.toShortVideo().commentCountText.takeIf { it.isNotBlank() } ?: stringResource(R.string.action_comments)
                     },
                     contentDescription = stringResource(R.string.action_comments),
-                    tint = actionsForegroundColor,
-                    textColor = actionsForegroundColor,
                     onClick = onCommentsClick
                 )
 
@@ -841,8 +840,7 @@ fun ShortVideoPage(
                     icon = if (isSaved) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
                     text = if (isSimpleShortsUi) "" else stringResource(R.string.action_save),
                     contentDescription = stringResource(R.string.action_save),
-                    tint = if (isSaved) primaryColor else actionsForegroundColor,
-                    textColor = actionsForegroundColor,
+                    tint = if (isSaved) primaryColor else Color.White,
                     onClick = {
                         viewModel.toggleSaveShort(video.toShortVideo())
                         if (isSimpleShortsUi) {
@@ -860,8 +858,6 @@ fun ShortVideoPage(
                     icon = Icons.Default.Share,
                     text = if (isSimpleShortsUi) "" else stringResource(R.string.action_share),
                     contentDescription = stringResource(R.string.action_share),
-                    tint = actionsForegroundColor,
-                    textColor = actionsForegroundColor,
                     onClick = onShareClick
                 )
 
@@ -869,8 +865,6 @@ fun ShortVideoPage(
                     icon = Icons.Default.MoreVert,
                     text = if (isSimpleShortsUi) "" else stringResource(R.string.cd_more_options),
                     contentDescription = stringResource(R.string.cd_more_options),
-                    tint = actionsForegroundColor,
-                    textColor = actionsForegroundColor,
                     onClick = { showShortsOptionsSheet = true }
                 )
 
@@ -1633,12 +1627,39 @@ fun ShortVideoItem(
 }
 
 @Composable
+private fun ShortsOverlayIcon(
+    imageVector: ImageVector,
+    contentDescription: String?,
+    tint: Color,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = imageVector,
+            contentDescription = null,
+            tint = Color.Black,
+            modifier = Modifier
+                .matchParentSize()
+                .scale(1.08f)
+        )
+        Icon(
+            imageVector = imageVector,
+            contentDescription = contentDescription,
+            tint = tint,
+            modifier = Modifier.matchParentSize()
+        )
+    }
+}
+
+@Composable
 fun ShortsActionButton(
     icon: ImageVector,
     text: String,
     contentDescription: String = text,
     tint: Color = Color.White,
-    textColor: Color = Color.White,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -1657,7 +1678,7 @@ fun ShortsActionButton(
             )
             .padding(horizontal = 4.dp)
     ) {
-        Icon(
+        ShortsOverlayIcon(
             imageVector = icon,
             contentDescription = null,
             tint = tint,
@@ -1667,8 +1688,10 @@ fun ShortsActionButton(
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = text,
-                style = MaterialTheme.typography.labelSmall,
-                color = textColor,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    shadow = shortsOverlayTextShadow
+                ),
+                color = Color.White,
                 fontWeight = FontWeight.Medium
             )
         }
@@ -1687,7 +1710,6 @@ fun ActionButton(
         icon = icon,
         text = text,
         tint = tint,
-        textColor = tint,
         onClick = onClick,
         modifier = modifier
     )
