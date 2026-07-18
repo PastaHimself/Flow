@@ -24,7 +24,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -157,8 +156,8 @@ fun VideoInfoContent(
                     Button(
                         onClick = { viewModel.retryLoadVideo() },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFFF0000),
-                            contentColor = Color.White
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor = MaterialTheme.colorScheme.onError
                         ),
                         shape = RoundedCornerShape(8.dp),
                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
@@ -170,14 +169,14 @@ fun VideoInfoContent(
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(Modifier.width(4.dp))
-                        Text("Retry", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                        Text(stringResource(R.string.retry), fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                     }
                     OutlinedButton(
                         onClick = {
                             val ok = PlayerDiagnostics.copyToClipboard(context)
                             Toast.makeText(
                                 context,
-                                if (ok) "Logs copied to clipboard" else "Failed to copy logs",
+                                context.getString(if (ok) R.string.logs_copied else R.string.logs_copy_failed),
                                 Toast.LENGTH_SHORT
                             ).show()
                         },
@@ -191,7 +190,7 @@ fun VideoInfoContent(
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(Modifier.width(4.dp))
-                        Text("Copy Logs", fontSize = 13.sp)
+                        Text(stringResource(R.string.copy_logs), fontSize = 13.sp)
                     }
                 }
                 // Row 2: Open in YouTube (full width)
@@ -213,7 +212,7 @@ fun VideoInfoContent(
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(Modifier.width(6.dp))
-                    Text("Open in YouTube", fontSize = 13.sp)
+                    Text(stringResource(R.string.open_in_youtube), fontSize = 13.sp)
                 }
             }
         }
