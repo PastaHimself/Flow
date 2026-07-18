@@ -50,6 +50,7 @@ import io.github.aedev.flow.data.model.*
 import io.github.aedev.flow.data.paging.SearchResultItem
 import io.github.aedev.flow.data.search.SearchSuggestionsService
 import io.github.aedev.flow.ui.components.*
+import io.github.aedev.flow.ui.theme.FlowTouchTarget
 import io.github.aedev.flow.utils.formatDuration
 import io.github.aedev.flow.utils.formatViewCount
 import kotlinx.coroutines.FlowPreview
