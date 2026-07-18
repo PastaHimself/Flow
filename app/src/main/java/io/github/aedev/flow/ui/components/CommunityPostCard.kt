@@ -35,12 +35,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import io.github.aedev.flow.R
 import io.github.aedev.flow.innertube.pages.CommunityPost
+import io.github.aedev.flow.ui.theme.FlowShapeTokens
+import io.github.aedev.flow.ui.theme.FlowSpacing
+import io.github.aedev.flow.ui.theme.FlowTouchTarget
 import io.github.aedev.flow.utils.ThumbnailUrlResolver
 import io.github.aedev.flow.utils.formatRichText
 
@@ -76,9 +82,9 @@ fun CommunityPostCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            .padding(horizontal = FlowSpacing.sm, vertical = FlowSpacing.xs),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(FlowShapeTokens.card),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Column(
@@ -88,6 +94,8 @@ fun CommunityPostCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .heightIn(min = FlowTouchTarget.minimum)
+                    .semantics(mergeDescendants = true) { role = Role.Button }
                     .clickable(onClick = onAuthorClick),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -145,6 +153,7 @@ fun CommunityPostCard(
                         .heightIn(min = 120.dp, max = 520.dp)
                         .clip(MaterialTheme.shapes.medium)
                         .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .semantics { role = Role.Button }
                         .clickable { showFullSizeImage = true },
                     contentScale = ContentScale.Fit,
                 )
