@@ -46,7 +46,7 @@
 
 - [ ] **Step 2: Run the test and confirm failure**
 
-Run: `./gradlew :app:testGithubDebugUnitTest --tests io.github.aedev.flow.ui.components.FlowContentComponentTest`  
+Run: `./gradlew :app:testGithubDebugUnitTest --tests io.github.aedev.flow.ui.components.FlowContentComponentTest`
 Expected: FAIL because `FlowCardDensity` and `FlowVideoCard` do not exist.
 
 - [ ] **Step 3: Implement the shared contracts**
@@ -55,7 +55,7 @@ Keep thumbnail loading, duration/live badges, DeArrow behavior, quick actions, a
 
 - [ ] **Step 4: Run the component test and confirm success**
 
-Run: `./gradlew :app:testGithubDebugUnitTest --tests io.github.aedev.flow.ui.components.FlowContentComponentTest`  
+Run: `./gradlew :app:testGithubDebugUnitTest --tests io.github.aedev.flow.ui.components.FlowContentComponentTest`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
@@ -95,7 +95,7 @@ git commit -m "feat(ui): add shared content card contracts"
 
 - [ ] **Step 2: Run the test and confirm failure**
 
-Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.screens.content.ContentScreenAccessibilityTest`  
+Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.screens.content.ContentScreenAccessibilityTest`
 Expected: FAIL because the current compact group actions are 32 dp.
 
 - [ ] **Step 3: Migrate the three screens**
@@ -104,7 +104,7 @@ Use the shared content card and section-state primitives. Replace Search's dupli
 
 - [ ] **Step 4: Run tests**
 
-Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.screens.content.ContentScreenAccessibilityTest`  
+Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.screens.content.ContentScreenAccessibilityTest`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
@@ -152,7 +152,7 @@ git commit -m "feat(ui): unify discovery and subscriptions surfaces"
 
 - [ ] **Step 2: Run the test and confirm failure**
 
-Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.screens.settings.SettingsAccessibilityTest`  
+Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.screens.settings.SettingsAccessibilityTest`
 Expected: FAIL until string resources and semantic targets are applied.
 
 - [ ] **Step 3: Migrate screen hierarchy**
@@ -161,7 +161,7 @@ Give Library a recent-activity and quick-action entry layer that links to the ex
 
 - [ ] **Step 4: Run tests**
 
-Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.screens.settings.SettingsAccessibilityTest`  
+Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.screens.settings.SettingsAccessibilityTest`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
@@ -195,7 +195,7 @@ git commit -m "feat(ui): refresh library settings and onboarding"
 
 - [ ] **Step 2: Run the test and confirm failure**
 
-Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.screens.channel.EditorialHeaderTest`  
+Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.screens.channel.EditorialHeaderTest`
 Expected: FAIL because the reusable header has no tab semantics.
 
 - [ ] **Step 3: Migrate headers and cards**
@@ -204,7 +204,7 @@ Adopt the shared editorial header, card density modes, semantic tabs, and width-
 
 - [ ] **Step 4: Run test**
 
-Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.screens.channel.EditorialHeaderTest`  
+Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.screens.channel.EditorialHeaderTest`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
@@ -221,12 +221,12 @@ git commit -m "feat(ui): unify editorial content headers"
 
 - [ ] **Step 1: Run focused tests**
 
-Run: `./gradlew :app:testGithubDebugUnitTest :app:connectedGithubDebugAndroidTest`  
+Run: `./gradlew :app:testGithubDebugUnitTest :app:connectedGithubDebugAndroidTest`
 Expected: PASS.
 
 - [ ] **Step 2: Run build and lint**
 
-Run: `./gradlew :app:assembleGithubDebug :app:lintGithubDebug`  
+Run: `./gradlew :app:assembleGithubDebug :app:lintGithubDebug`
 Expected: BUILD SUCCESSFUL.
 
 - [ ] **Step 3: Manual matrix**
