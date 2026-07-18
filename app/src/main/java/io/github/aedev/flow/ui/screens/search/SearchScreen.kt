@@ -1128,15 +1128,18 @@ private fun PagingFooter(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    appendState.error.localizedMessage ?: "Load failed",
+                    appendState.error.localizedMessage ?: stringResource(R.string.search_load_failed),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
                     maxLines = 2
                 )
-                OutlinedButton(onClick = onRetry) {
+                OutlinedButton(
+                    onClick = onRetry,
+                    modifier = Modifier.heightIn(min = FlowTouchTarget.minimum),
+                ) {
                     Icon(Icons.Default.Refresh, null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Retry", style = MaterialTheme.typography.labelMedium)
+                    Text(stringResource(R.string.retry), style = MaterialTheme.typography.labelMedium)
                 }
             }
         }
@@ -1892,36 +1895,11 @@ private fun SearchPlaylistCardCompact(
 
 @Composable
 private fun SearchErrorState(message: String, onRetry: () -> Unit) {
-    Box(Modifier.fillMaxSize(), Alignment.Center) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Icon(
-                Icons.Outlined.WifiOff, null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(48.dp)
-            )
-            Text(
-                "Search Failed",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            Text(
-                message,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis
-            )
-            Button(onClick = onRetry) {
-                Icon(Icons.Default.Refresh, null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(6.dp))
-                Text("Retry")
-            }
-        }
-    }
+    FlowErrorState(
+        title = stringResource(R.string.search_failed),
+        description = message,
+        onRetry = onRetry,
+    )
 }
 
 @Composable
