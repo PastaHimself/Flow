@@ -16,6 +16,9 @@
     <string name="subscriptions_last_refreshed_template">Last refreshed %1$s - %2$d videos checked</string>
     <string name="subscriptions_last_refreshed_time_only_template">Last refreshed %1$s</string>
     <string name="retry">Retry</string>
+    <string name="search_failed">Search failed</string>
+    <string name="search_loading_more">Loading more…</string>
+    <string name="search_load_failed">Couldn’t load more results</string>
     <string name="settings_search_placeholder">Search settings…</string>
     <string name="settings_search_close">Close search</string>
     <string name="settings_search_clear">Clear search</string>
