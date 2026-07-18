@@ -17,8 +17,8 @@ android {
         applicationId = "io.github.aedev.flow"
         minSdk = 26
         targetSdk = 34
-        versionCode = 16
-        versionName = "2.1.5"
+        versionCode = 17
+        versionName = "2.2.0"
 
         testInstrumentationRunner = "io.github.aedev.flow.HiltTestRunner"
         vectorDrawables {
@@ -245,6 +245,12 @@ dependencies {
     
     implementation(libs.androidx.datastore.preferences)
     // implementation(libs.androidx.datastore) // In TOML if needed
+
+    // --- Home-screen widgets (Jetpack Glance) ---
+    implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.glance.material3)
+    // M3 Expressive shape geometry (RoundedPolygon) for widget artwork/decor clipping
+    implementation(libs.androidx.graphics.shapes)
 
     // --- Async & Utils ---
     implementation(libs.kotlinx.coroutines.android)
