@@ -26,6 +26,14 @@ import io.github.aedev.flow.ui.theme.extendedColors
 import androidx.compose.ui.res.vectorResource
 import io.github.aedev.flow.R
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import io.github.aedev.flow.ui.theme.FlowIconSize
+import io.github.aedev.flow.ui.theme.FlowShapeTokens
+import io.github.aedev.flow.ui.theme.FlowSpacing
+import io.github.aedev.flow.ui.theme.FlowTouchTarget
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -193,13 +201,15 @@ private fun LibrarySectionHeader(title: String) {
         text = title,
         style = MaterialTheme.typography.titleMedium,
         color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(bottom = 8.dp)
+        modifier = Modifier
+            .padding(bottom = FlowSpacing.xs)
+            .semantics { heading() }
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun LibraryCard(
+internal fun LibraryCard(
     icon: ImageVector,
     title: String,
     subtitle: String,
@@ -208,15 +218,18 @@ private fun LibraryCard(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .heightIn(min = FlowTouchTarget.minimum)
+            .clip(RoundedCornerShape(FlowShapeTokens.control))
+            .semantics(mergeDescendants = true) { role = Role.Button }
             .clickable(onClick = onClick)
-            .padding(vertical = 12.dp, horizontal = 8.dp),
+            .padding(vertical = FlowSpacing.sm, horizontal = FlowSpacing.xs),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
+        horizontalArrangement = Arrangement.spacedBy(FlowSpacing.md)
     ) {
         // Icon Container
         Box(
             modifier = Modifier
-                .size(48.dp)
+                .size(FlowTouchTarget.minimum)
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
             contentAlignment = Alignment.Center
@@ -225,7 +238,7 @@ private fun LibraryCard(
                 imageVector = icon,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(FlowIconSize.standard)
             )
         }
 
