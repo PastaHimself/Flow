@@ -41,7 +41,7 @@
 
 - [ ] **Step 2: Run the test and confirm failure**
 
-Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.components.PersistentMiniMusicPlayerTest`  
+Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.components.PersistentMiniMusicPlayerTest`
 Expected: FAIL because the current component has compact 34–40 dp controls and does not expose the new layout.
 
 - [ ] **Step 3: Implement the tonal surface**
@@ -50,7 +50,7 @@ Replace persistent background-image blur and manual 16 dp black shadow with a Ma
 
 - [ ] **Step 4: Run test**
 
-Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.components.PersistentMiniMusicPlayerTest`  
+Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.components.PersistentMiniMusicPlayerTest`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
@@ -84,7 +84,7 @@ git commit -m "feat(player): refresh persistent mini player"
 
 - [ ] **Step 2: Run the test and confirm failure**
 
-Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.screens.player.VideoPlayerControlsTest`  
+Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.screens.player.VideoPlayerControlsTest`
 Expected: FAIL because the new semantic action row is absent.
 
 - [ ] **Step 3: Implement hierarchy without changing player behavior**
@@ -93,7 +93,7 @@ Place navigation/context in the top zone, seek/playback in the centre/bottom zon
 
 - [ ] **Step 4: Run test**
 
-Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.screens.player.VideoPlayerControlsTest`  
+Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.screens.player.VideoPlayerControlsTest`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
@@ -135,7 +135,7 @@ git commit -m "feat(player): clarify video player controls"
 
 - [ ] **Step 2: Run tests and confirm failure**
 
-Run: `./gradlew :app:testGithubDebugUnitTest --tests io.github.aedev.flow.ui.screens.music.MusicPlayerPalettePolicyTest && ./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.screens.music.MusicPlayerAccessibilityTest`  
+Run: `./gradlew :app:testGithubDebugUnitTest --tests io.github.aedev.flow.ui.screens.music.MusicPlayerPalettePolicyTest && ./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.screens.music.MusicPlayerAccessibilityTest`
 Expected: FAIL because the policy and target sizing are absent.
 
 - [ ] **Step 3: Implement the policy and updated layout**
@@ -144,7 +144,7 @@ Extract artwork palette on `Dispatchers.Default` only when the expanded player n
 
 - [ ] **Step 4: Run tests**
 
-Run: `./gradlew :app:testGithubDebugUnitTest --tests io.github.aedev.flow.ui.screens.music.MusicPlayerPalettePolicyTest && ./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.screens.music.MusicPlayerAccessibilityTest`  
+Run: `./gradlew :app:testGithubDebugUnitTest --tests io.github.aedev.flow.ui.screens.music.MusicPlayerPalettePolicyTest && ./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.screens.music.MusicPlayerAccessibilityTest`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
@@ -177,7 +177,7 @@ git commit -m "feat(music): refine expanded player presentation"
 
 - [ ] **Step 2: Run the test and confirm failure**
 
-Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.screens.shorts.ShortsActionAccessibilityTest`  
+Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.screens.shorts.ShortsActionAccessibilityTest`
 Expected: FAIL if the visible compact target does not meet the design token.
 
 - [ ] **Step 3: Migrate the action rail and motion**
@@ -186,7 +186,7 @@ Use contrast values from the existing ambient-frame work with semantic fallbacks
 
 - [ ] **Step 4: Run test**
 
-Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.screens.shorts.ShortsActionAccessibilityTest`  
+Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.screens.shorts.ShortsActionAccessibilityTest`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
@@ -203,12 +203,12 @@ git commit -m "feat(shorts): improve contrast and accessibility"
 
 - [ ] **Step 1: Run player and Shorts unit tests**
 
-Run: `./gradlew :app:testGithubDebugUnitTest --tests io.github.aedev.flow.player.* --tests io.github.aedev.flow.ui.screens.shorts.*`  
+Run: `./gradlew :app:testGithubDebugUnitTest --tests io.github.aedev.flow.player.* --tests io.github.aedev.flow.ui.screens.shorts.*`
 Expected: PASS.
 
 - [ ] **Step 2: Run build and lint**
 
-Run: `./gradlew :app:assembleGithubDebug :app:lintGithubDebug`  
+Run: `./gradlew :app:assembleGithubDebug :app:lintGithubDebug`
 Expected: BUILD SUCCESSFUL.
 
 - [ ] **Step 3: Manual media smoke test**
