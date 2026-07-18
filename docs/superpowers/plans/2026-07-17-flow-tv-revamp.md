@@ -46,7 +46,7 @@ class TvFocusStyleTest {
 
 - [ ] **Step 2: Run the test and confirm failure**
 
-Run: `./gradlew :app:testGithubDebugUnitTest --tests io.github.aedev.flow.ui.tv.components.TvFocusStyleTest`  
+Run: `./gradlew :app:testGithubDebugUnitTest --tests io.github.aedev.flow.ui.tv.components.TvFocusStyleTest`
 Expected: FAIL because `TvFocusStyle` is absent.
 
 - [ ] **Step 3: Implement the contract**
@@ -55,7 +55,7 @@ Move the existing local focus constants into `TvFocusStyle`. Use Flow tokens for
 
 - [ ] **Step 4: Run the test and confirm success**
 
-Run: `./gradlew :app:testGithubDebugUnitTest --tests io.github.aedev.flow.ui.tv.components.TvFocusStyleTest`  
+Run: `./gradlew :app:testGithubDebugUnitTest --tests io.github.aedev.flow.ui.tv.components.TvFocusStyleTest`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
@@ -96,7 +96,7 @@ git commit -m "feat(tv): standardize focus and navigation"
 
 - [ ] **Step 2: Run the tests and confirm failure**
 
-Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.tv.components.TvScreenStatesTest`  
+Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.tv.components.TvScreenStatesTest`
 Expected: FAIL because retry is not part of the current TV state contract.
 
 - [ ] **Step 3: Implement TV-scale cards and states**
@@ -105,7 +105,7 @@ Use large thumbnail ratios, readable title/metadata spacing, shared semantic sur
 
 - [ ] **Step 4: Run tests**
 
-Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.tv.components.TvScreenStatesTest`  
+Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.tv.components.TvScreenStatesTest`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
@@ -143,7 +143,7 @@ git commit -m "feat(tv): refresh cards and screen states"
 
 - [ ] **Step 2: Run the test and confirm failure or capture the current focus issue**
 
-Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.tv.screens.TvNavigationSmokeTest`  
+Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.tv.screens.TvNavigationSmokeTest`
 Expected: Record the initial state; the test must pass after the migrated rail exposes a unique accessible label for Library.
 
 - [ ] **Step 3: Apply the TV information architecture**
@@ -152,7 +152,7 @@ Keep Home as lanes, Search as query plus result grid, Library as category switch
 
 - [ ] **Step 4: Run test**
 
-Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.tv.screens.TvNavigationSmokeTest`  
+Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.tv.screens.TvNavigationSmokeTest`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
@@ -188,7 +188,7 @@ git commit -m "feat(tv): refresh core browse surfaces"
 
 - [ ] **Step 2: Run the test and confirm failure**
 
-Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.tv.screens.TvPlayerControlsTest`  
+Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.tv.screens.TvPlayerControlsTest`
 Expected: FAIL until the close action is explicit and focusable.
 
 - [ ] **Step 3: Implement remote-first control order**
@@ -197,7 +197,7 @@ Arrange focused controls in a predictable order: back/close, play-pause, seek, t
 
 - [ ] **Step 4: Run tests**
 
-Run: `./gradlew :app:testGithubDebugUnitTest --tests io.github.aedev.flow.ui.tv.input.TvPlayerKeyMapperTest && ./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.tv.screens.TvPlayerControlsTest`  
+Run: `./gradlew :app:testGithubDebugUnitTest --tests io.github.aedev.flow.ui.tv.input.TvPlayerKeyMapperTest && ./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.tv.screens.TvPlayerControlsTest`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
@@ -214,12 +214,12 @@ git commit -m "feat(tv): make player controls remote first"
 
 - [ ] **Step 1: Run focused TV tests**
 
-Run: `./gradlew :app:testGithubDebugUnitTest --tests io.github.aedev.flow.ui.tv.*`  
+Run: `./gradlew :app:testGithubDebugUnitTest --tests io.github.aedev.flow.ui.tv.*`
 Expected: PASS.
 
 - [ ] **Step 2: Build and lint**
 
-Run: `./gradlew :app:assembleGithubDebug :app:lintGithubDebug`  
+Run: `./gradlew :app:assembleGithubDebug :app:lintGithubDebug`
 Expected: BUILD SUCCESSFUL.
 
 - [ ] **Step 3: Test on a TV emulator or hardware**
