@@ -1115,7 +1115,7 @@ private fun PagingFooter(
                         color = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        "Loading more\u2026",
+                        stringResource(R.string.search_loading_more),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
