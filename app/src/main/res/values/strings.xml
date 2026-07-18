@@ -309,6 +309,7 @@
     <string name="chapters">Chapters</string>
     <string name="artist">Artist</string>
     <string name="playlist">Playlist</string>
+    <string name="playlist_no_songs_found">No songs found</string>
     <string name="app_name_uppercase">FLOW</string>
     <string name="notification_badge_9_plus">9+</string>
     <string name="personalized_feed">Your personalized feed</string>
