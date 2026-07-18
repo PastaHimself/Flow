@@ -58,6 +58,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -68,6 +71,7 @@ import io.github.aedev.flow.data.recommendation.FlowPersona
 import io.github.aedev.flow.data.recommendation.UserBrain
 import io.github.aedev.flow.ui.theme.FlowShapeTokens
 import io.github.aedev.flow.ui.theme.FlowSpacing
+import io.github.aedev.flow.ui.theme.FlowTouchTarget
 
 @Composable
 internal fun PersonalityOverviewSection(
@@ -707,7 +711,7 @@ private fun FilterItemRow(
             )
             IconButton(
                 onClick = onRemove,
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(FlowTouchTarget.minimum)
             ) {
                 Icon(
                     imageVector = Icons.Default.Close,
@@ -769,8 +773,10 @@ private fun ProfileActionRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .heightIn(min = FlowTouchTarget.minimum)
+            .semantics(mergeDescendants = true) { role = Role.Button }
             .clickable(onClick = onClick)
-            .padding(vertical = 4.dp),
+            .padding(vertical = FlowSpacing.xxs),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
