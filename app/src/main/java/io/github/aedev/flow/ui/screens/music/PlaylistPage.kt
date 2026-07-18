@@ -347,7 +347,7 @@ fun PlaylistPage(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = "No songs found",
+                                    text = stringResource(R.string.playlist_no_songs_found),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                                 )
@@ -615,7 +615,7 @@ private fun PlaylistCenteredHeader(
                 ) {
                     Icon(
                         imageVector = if (isDownloading) Icons.Outlined.Downloading else Icons.Outlined.Download,
-                        contentDescription = "Download",
+                        contentDescription = stringResource(R.string.download),
                         tint = Color.White,
                         modifier = Modifier.size(22.dp)
                     )
@@ -667,7 +667,7 @@ private fun PlaylistCenteredHeader(
             ) {
                 Icon(
                     imageVector = Icons.Default.Shuffle,
-                    contentDescription = "Shuffle",
+                    contentDescription = stringResource(R.string.shuffle),
                     tint = Color.White,
                     modifier = Modifier.size(22.dp)
                 )
@@ -705,7 +705,7 @@ private fun PlaylistSearchBar(
                 IconButton(onClick = onToggleSearch, modifier = Modifier.size(40.dp)) {
                     Icon(
                         Icons.Default.ArrowBack,
-                        contentDescription = "Close search",
+                        contentDescription = stringResource(R.string.close),
                         tint = MaterialTheme.colorScheme.onBackground
                     )
                 }
@@ -760,7 +760,7 @@ private fun PlaylistSearchBar(
                     IconButton(onClick = onClear, modifier = Modifier.size(24.dp)) {
                         Icon(
                             Icons.Default.Close,
-                            contentDescription = "Clear",
+                            contentDescription = stringResource(R.string.clear),
                             tint = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(18.dp)
                         )
@@ -859,7 +859,7 @@ private fun PlaylistTrackRow(
                 IconButton(onClick = onDeleteClick, modifier = Modifier.size(32.dp)) {
                     Icon(
                         imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete from playlist",
+                        contentDescription = stringResource(R.string.remove_from_playlist_action),
                         tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
                         modifier = Modifier.size(18.dp)
                     )
@@ -869,7 +869,7 @@ private fun PlaylistTrackRow(
             IconButton(onClick = onMenuClick, modifier = Modifier.size(32.dp)) {
                 Icon(
                     imageVector = Icons.Default.MoreVert,
-                    contentDescription = "More",
+                    contentDescription = stringResource(R.string.more_options),
                     tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.45f),
                     modifier = Modifier.size(18.dp)
                 )
@@ -925,7 +925,7 @@ private fun SearchResultTrackRow(
         if (isAdded) {
             Icon(
                 imageVector = Icons.Default.CheckCircle,
-                contentDescription = "Added",
+                contentDescription = stringResource(R.string.added_to_playlist_toast),
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(28.dp)
             )
@@ -933,7 +933,7 @@ private fun SearchResultTrackRow(
             IconButton(onClick = onAddClick) {
                 Icon(
                     imageVector = Icons.Outlined.AddCircle,
-                    contentDescription = "Add to playlist",
+                    contentDescription = stringResource(R.string.add_to_playlist),
                     tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                     modifier = Modifier.size(28.dp)
                 )
