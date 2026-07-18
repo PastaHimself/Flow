@@ -47,11 +47,14 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import io.github.aedev.flow.ui.components.MusicQuickActionsSheet
+import io.github.aedev.flow.ui.components.FlowEditorialHeader
 import io.github.aedev.flow.ui.components.MusicCollectionActionItem
 import io.github.aedev.flow.ui.components.MusicCollectionQuickActionsSheet
 import io.github.aedev.flow.ui.components.AddToPlaylistDialog
 import io.github.aedev.flow.data.model.Video
 import io.github.aedev.flow.ui.screens.music.components.TrackListItem
+import io.github.aedev.flow.ui.theme.FlowShapeTokens
+import io.github.aedev.flow.ui.theme.FlowTouchTarget
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -241,24 +244,22 @@ fun ArtistPage(
                         modifier = Modifier
                             .fillMaxWidth()
                             .offset(y = (-32).dp)
-                            .padding(horizontal = 24.dp)
+                            .padding(horizontal = 8.dp)
                     ) {
-                        Text(
-                            text = artistDetails.name,
-                            style = MaterialTheme.typography.displaySmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = (-1).sp
-                            ),
-                            color = MaterialTheme.colorScheme.onBackground
+                        FlowEditorialHeader(
+                            title = artistDetails.name,
+                            subtitle = artistDetails.subscriberCount
+                                .takeIf { it > 0 }
+                                ?.let { stringResource(R.string.subscribers_count_template, formatViews(it)) },
                         )
-                        
-                        Spacer(modifier = Modifier.height(16.dp))
                         
                         // Controls Row
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp)
                         ) {
                             // Subscribe Button
                             Button(
@@ -274,8 +275,8 @@ fun ArtistPage(
                                         MaterialTheme.colorScheme.onPrimary
                                 ),
                                 contentPadding = PaddingValues(horizontal = 24.dp),
-                                shape = RoundedCornerShape(32.dp),
-                                modifier = Modifier.height(44.dp)
+                                shape = RoundedCornerShape(FlowShapeTokens.control),
+                                modifier = Modifier.height(FlowTouchTarget.minimum)
                             ) {
                                 Text(
                                     text = if (artistDetails.isSubscribed) stringResource(R.string.subscribed) else stringResource(R.string.subscribe),
@@ -666,4 +667,3 @@ fun RelatedArtistCard(artist: ArtistDetails, onClick: () -> Unit) {
         )
     }
 }
-
