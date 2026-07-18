@@ -72,6 +72,8 @@ import io.github.aedev.flow.data.local.VideoHistoryEntry
 import io.github.aedev.flow.data.model.Video
 import io.github.aedev.flow.data.model.VideoCollaborator
 import io.github.aedev.flow.data.repository.VideoCollaboratorResolver
+import io.github.aedev.flow.ui.components.FlowEmptyState
+import io.github.aedev.flow.ui.components.FlowLoadingState
 import io.github.aedev.flow.ui.components.ShortsCard
 import io.github.aedev.flow.ui.screens.music.MusicTrack
 import io.github.aedev.flow.ui.screens.music.MusicTrackRow
@@ -223,12 +225,7 @@ fun HistoryScreen(
 
             when {
                 uiState.isLoading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
+                    FlowLoadingState(modifier = Modifier.fillMaxSize())
                 }
 
                 uiState.historyEntries.isEmpty() -> {
@@ -710,34 +707,13 @@ private fun HistoryVideoCard(
 private fun EmptyHistoryState(
     modifier: Modifier = Modifier,
     title: String = stringResource(R.string.empty_watch_history),
-    body: String = stringResource(R.string.empty_watch_history_body)
+    body: String = stringResource(R.string.empty_watch_history_body),
 ) {
-    Column(
-        modifier = modifier.padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            imageVector = Icons.Outlined.History,
-            contentDescription = null,
-            modifier = Modifier.size(80.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onBackground,
-            textAlign = TextAlign.Center
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = body,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
-        )
-    }
+    FlowEmptyState(
+        title = title,
+        description = body,
+        modifier = modifier,
+    )
 }
 
 private enum class HistoryContentFilter {
