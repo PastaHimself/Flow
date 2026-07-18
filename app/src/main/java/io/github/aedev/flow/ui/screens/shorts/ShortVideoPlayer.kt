@@ -30,7 +30,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -69,6 +68,7 @@ import io.github.aedev.flow.ui.components.playbackSpeedSliderPresets
 import io.github.aedev.flow.ui.components.rememberFlowSheetState
 import io.github.aedev.flow.ui.components.rememberDateDisplaySettings
 import io.github.aedev.flow.ui.theme.FlowIconSize
+import io.github.aedev.flow.ui.theme.FlowMotion
 import io.github.aedev.flow.ui.theme.FlowTouchTarget
 import io.github.aedev.flow.ui.screens.player.components.PlayerQualitySelectorContent
 import io.github.aedev.flow.ui.screens.player.components.PlayerQualitySelectorOption
@@ -197,12 +197,12 @@ fun ShortVideoPage(
     }
     val metadataForegroundColor by animateColorAsState(
         targetValue = ambientFrame.metadataForeground ?: Color.White,
-        animationSpec = tween(300),
+        animationSpec = FlowMotion.shellSpec(),
         label = "shorts_metadata_foreground"
     )
     val actionsForegroundColor by animateColorAsState(
         targetValue = ambientFrame.actionsForeground ?: Color.White,
-        animationSpec = tween(300),
+        animationSpec = FlowMotion.shellSpec(),
         label = "shorts_actions_foreground"
     )
 
@@ -874,17 +874,6 @@ fun ShortVideoPage(
                     onClick = { showShortsOptionsSheet = true }
                 )
 
-                val infiniteTransition = rememberInfiniteTransition(label = "album_spin")
-                val albumRotation by infiniteTransition.animateFloat(
-                    initialValue = 0f,
-                    targetValue = 360f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(4000, easing = LinearEasing),
-                        repeatMode = RepeatMode.Restart
-                    ),
-                    label = "album_rotation"
-                )
-
                 Box(
                     modifier = Modifier
                         .size(36.dp) 
@@ -897,10 +886,6 @@ fun ShortVideoPage(
                         modifier = Modifier
                             .fillMaxSize()
                             .clip(CircleShape)
-                            .then(
-                                if (isActive && isPlaying) Modifier.graphicsLayer { rotationZ = albumRotation }
-                                else Modifier
-                            )
                     )
                 }
             }
