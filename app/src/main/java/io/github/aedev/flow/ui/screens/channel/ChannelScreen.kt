@@ -72,6 +72,7 @@ import io.github.aedev.flow.ui.components.CompactVideoCard
 import io.github.aedev.flow.ui.components.ChannelBanner
 import io.github.aedev.flow.ui.components.CommentSortFilter
 import io.github.aedev.flow.ui.components.FlowCommentsBottomSheet
+import io.github.aedev.flow.ui.components.FlowEditorialHeader
 import io.github.aedev.flow.ui.components.FullSizeImageDialog
 import io.github.aedev.flow.ui.components.VideoCardFullWidth
 import io.github.aedev.flow.ui.components.sortCommentsByFilter
@@ -1054,6 +1055,135 @@ private fun ChannelTabRow(
         selectedTab = selectedIndex,
         onTabSelected = onTabSelected,
     )
+}
+
+// Tab content helpers (LazyListScope)
+private fun LazyListScope.videosContent(
+    pagingItems: LazyPagingItems<Video>?,
+    sortedItems: SortedVideos,
+    isGridView: Boolean,
+    listKeyPrefix: String = "",
+    onVideoClick: (Video) -> Unit
+) {
+    if (sortedItems != null) {
+        if (sortedItems.isEmpty()) {
+            item { EmptyState(message = "No videos found") }
+            return
+        }
+        items(count = sortedItems.size, key = { "${listKeyPrefix}_${sortedItems[it].id}" }) { idx ->
+            val video = sortedItems[idx]
+            if (isGridView) {
+                VideoCardFullWidth(video = video, onClick = { onVideoClick(video) })
+            } else {
+                CompactVideoCard(video = video, onClick = { onVideoClick(video) })
+            }
+        }
+        return
+    }
+
+    if (pagingItems == null ||
+        (pagingItems.loadState.refresh is LoadState.NotLoading && pagingItems.itemCount == 0)) {
+        item { EmptyState(message = "No videos found") }
+        return
+    }
+    items(count = pagingItems.itemCount, key = pagingItems.itemKey { it.id }) { index ->
+        pagingItems[index]?.let { video ->
+            if (isGridView) {
+                VideoCardFullWidth(video = video, onClick = { onVideoClick(video) })
+            } else {
+                CompactVideoCard(video = video, onClick = { onVideoClick(video) })
+            }
+        }
+    }
+}
+
+private fun LazyListScope.shortsContent(
+    pagingItems: LazyPagingItems<Video>?,
+    onShortClick: (String) -> Unit
+) {
+    if (pagingItems == null ||
+        (pagingItems.loadState.refresh is LoadState.NotLoading && pagingItems.itemCount == 0)) {
+        item { EmptyState(message = "No Shorts found") }
+        return
+    }
+    val count = pagingItems.itemCount
+    val rowCount = (count + 1) / 2
+    items(count = rowCount, key = { rowIdx -> "shorts_row_$rowIdx" }) { rowIdx ->
+        val firstIdx = rowIdx * 2
+        val secondIdx = rowIdx * 2 + 1
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(1.dp)
+        ) {
+            Box(modifier = Modifier.weight(1f)) {
+                pagingItems[firstIdx]?.let { video ->
+                    ShortsGridCard(video = video, onClick = { onShortClick(video.id) })
+                }
+            }
+            Box(modifier = Modifier.weight(1f)) {
+                if (secondIdx < count) {
+                    pagingItems[secondIdx]?.let { video ->
+                        ShortsGridCard(video = video, onClick = { onShortClick(video.id) })
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun LazyListScope.liveContent(
+    pagingItems: LazyPagingItems<Video>?,
+    sortedItems: SortedVideos,
+    isGridView: Boolean,
+    listKeyPrefix: String = "",
+    onVideoClick: (Video) -> Unit
+) {
+    if (sortedItems != null) {
+        if (sortedItems.isEmpty()) {
+            item { EmptyState(message = "No live videos found") }
+            return
+        }
+        items(count = sortedItems.size, key = { "${listKeyPrefix}_${sortedItems[it].id}" }) { idx ->
+            val video = sortedItems[idx]
+            if (isGridView) {
+                VideoCardFullWidth(video = video, onClick = { onVideoClick(video) })
+            } else {
+                CompactVideoCard(video = video, onClick = { onVideoClick(video) })
+            }
+        }
+        return
+    }
+
+    if (pagingItems == null ||
+        (pagingItems.loadState.refresh is LoadState.NotLoading && pagingItems.itemCount == 0)) {
+        item { EmptyState(message = "No live videos found") }
+        return
+    }
+    items(count = pagingItems.itemCount, key = pagingItems.itemKey { it.id }) { index ->
+        pagingItems[index]?.let { video ->
+            if (isGridView) {
+                VideoCardFullWidth(video = video, onClick = { onVideoClick(video) })
+            } else {
+                CompactVideoCard(video = video, onClick = { onVideoClick(video) })
+            }
+        }
+    }
+}
+
+private fun LazyListScope.playlistsContent(
+    pagingItems: LazyPagingItems<io.github.aedev.flow.data.model.Playlist>?,
+    onPlaylistClick: (String) -> Unit
+) {
+    if (pagingItems == null ||
+        (pagingItems.loadState.refresh is LoadState.NotLoading && pagingItems.itemCount == 0)) {
+        item { EmptyState(message = "No playlists found") }
+        return
+    }
+    items(count = pagingItems.itemCount, key = pagingItems.itemKey { it.id }) { index ->
+        pagingItems[index]?.let { playlist ->
+            PlaylistCard(playlist = playlist, onClick = { onPlaylistClick(playlist.id) })
+        }
+    }
 }
 
 @Composable

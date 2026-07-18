@@ -32,10 +32,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.aedev.flow.BuildConfig
+import io.github.aedev.flow.R
 import io.github.aedev.flow.data.local.DEEP_FLOW_NEVER_EXPIRES_HOURS
 import io.github.aedev.flow.data.recommendation.FlowNeuroEngine
 import io.github.aedev.flow.data.recommendation.UserBrain
