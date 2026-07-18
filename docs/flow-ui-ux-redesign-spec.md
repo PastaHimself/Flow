@@ -1,9 +1,9 @@
 # Flow UI/UX Redesign Specification
 
-**Status:** Design approved; implementation plan pending written-spec review  
-**Repository:** `PastaHimself/Flow` only  
-**Branch:** `flow-ui-ux-revamp`  
-**Design baseline:** `1f9292d75c5062f13cdab57584cc2b60b1e0ef48`  
+**Status:** Design approved and implemented; automated verification is blocked before source compilation by Android Gradle Plugin resolution
+**Repository:** `PastaHimself/Flow` only
+**Branch:** `flow-ui-ux-revamp`
+**Design baseline:** `1f9292d75c5062f13cdab57584cc2b60b1e0ef48`
 **Platforms:** Android phone, tablet, foldable, landscape, and Android TV
 
 ## 1. Purpose and constraints
@@ -197,7 +197,7 @@ Suggested commands, subject to local task discovery:
 ./gradlew :app:lintGithubDebug
 ```
 
-The initial local audit could not run Gradle because the environment could not download the Gradle distribution. That infrastructure limitation is not a repository failure and must be rechecked before implementation sign-off.
+Gradle now starts with a writable local cache, but this environment cannot resolve `com.android.application:8.7.2` from the configured plugin repositories. The failure occurs while evaluating the root build file, before project source compilation, unit tests, or lint. These checks must be rerun in an Android build environment with access to the Google Maven repository.
 
 ## 12. Non-goals
 
