@@ -46,7 +46,7 @@ class FlowDesignTokensTest {
 
 - [ ] **Step 2: Run the test and confirm failure**
 
-Run: `./gradlew :app:testGithubDebugUnitTest --tests io.github.aedev.flow.ui.theme.FlowDesignTokensTest`  
+Run: `./gradlew :app:testGithubDebugUnitTest --tests io.github.aedev.flow.ui.theme.FlowDesignTokensTest`
 Expected: FAIL because `FlowTouchTarget` and `FlowSpacing` are absent.
 
 - [ ] **Step 3: Add the minimal API**
@@ -69,7 +69,7 @@ Create `FlowMotion` with feedback duration 150 ms, shell duration 240 ms, and he
 
 - [ ] **Step 4: Run the test and confirm success**
 
-Run: `./gradlew :app:testGithubDebugUnitTest --tests io.github.aedev.flow.ui.theme.FlowDesignTokensTest`  
+Run: `./gradlew :app:testGithubDebugUnitTest --tests io.github.aedev.flow.ui.theme.FlowDesignTokensTest`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
@@ -104,7 +104,7 @@ git commit -m "feat(ui): add shared Flow design tokens"
 
 - [ ] **Step 2: Run the test and confirm failure**
 
-Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.components.FlowScreenStateTest`  
+Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.components.FlowScreenStateTest`
 Expected: FAIL because `FlowErrorState` is absent.
 
 - [ ] **Step 3: Implement the semantic components**
@@ -134,7 +134,7 @@ Implement loading and empty variants with the same vertical rhythm, semantic hea
 
 - [ ] **Step 4: Run the test and confirm success**
 
-Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.components.FlowScreenStateTest`  
+Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.components.FlowScreenStateTest`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
@@ -169,7 +169,7 @@ git commit -m "feat(ui): add accessible screen state components"
 
 - [ ] **Step 2: Run the test and confirm failure**
 
-Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.components.NavigationComponentsTest`  
+Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.components.NavigationComponentsTest`
 Expected: FAIL because the current clickable content is shorter than 48 dp and has no selected semantics.
 
 - [ ] **Step 3: Migrate `BottomNavItem`**
@@ -178,7 +178,7 @@ Use `Modifier.sizeIn(minHeight = FlowTouchTarget.minimum)`, `semantics { selecte
 
 - [ ] **Step 4: Run the test and confirm success**
 
-Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.components.NavigationComponentsTest`  
+Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.components.NavigationComponentsTest`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
@@ -218,7 +218,7 @@ git commit -m "fix(ui): make bottom navigation accessible"
 
 - [ ] **Step 2: Run the test and confirm failure**
 
-Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.components.AdaptiveNavigationShellTest`  
+Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.components.AdaptiveNavigationShellTest`
 Expected: FAIL because `AdaptiveNavigationShell` is absent.
 
 - [ ] **Step 3: Implement and wire the shell**
@@ -227,7 +227,7 @@ Use `BoxWithConstraints`. Below 600 dp render the existing `FloatingBottomNavBar
 
 - [ ] **Step 4: Run the shell and navigation tests**
 
-Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.components.AdaptiveNavigationShellTest,io.github.aedev.flow.ui.components.NavigationComponentsTest`  
+Run: `./gradlew :app:connectedGithubDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=io.github.aedev.flow.ui.components.AdaptiveNavigationShellTest,io.github.aedev.flow.ui.components.NavigationComponentsTest`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
@@ -244,12 +244,12 @@ git commit -m "feat(ui): add adaptive navigation shell"
 
 - [ ] **Step 1: Run focused tests**
 
-Run: `./gradlew :app:testGithubDebugUnitTest :app:connectedGithubDebugAndroidTest --tests io.github.aedev.flow.ui.theme.FlowDesignTokensTest`  
+Run: `./gradlew :app:testGithubDebugUnitTest :app:connectedGithubDebugAndroidTest --tests io.github.aedev.flow.ui.theme.FlowDesignTokensTest`
 Expected: PASS.
 
 - [ ] **Step 2: Run build and lint**
 
-Run: `./gradlew :app:assembleGithubDebug :app:lintGithubDebug`  
+Run: `./gradlew :app:assembleGithubDebug :app:lintGithubDebug`
 Expected: BUILD SUCCESSFUL.
 
 - [ ] **Step 3: Manually verify compact and medium shells**
