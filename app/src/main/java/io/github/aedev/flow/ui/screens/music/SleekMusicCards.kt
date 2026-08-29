@@ -55,7 +55,7 @@ fun CompactSleekCard(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .padding(12.dp),
+                    .padding(Dimensions.Spacing.Lg),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             // Thumbnail
@@ -94,7 +94,7 @@ fun CompactSleekCard(
                 modifier =
                     Modifier
                         .weight(1f)
-                        .padding(horizontal = 12.dp),
+                        .padding(horizontal = Dimensions.Spacing.Lg),
                 verticalArrangement = Arrangement.Center,
             ) {
                 Text(
@@ -108,7 +108,7 @@ fun CompactSleekCard(
                     color = MaterialTheme.colorScheme.onSurface,
                 )
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(Dimensions.Spacing.Xs))
 
                 Text(
                     text = track.artist,
@@ -122,7 +122,7 @@ fun CompactSleekCard(
             // More button
             IconButton(
                 onClick = onMoreClick,
-                modifier = Modifier.size(40.dp),
+                modifier = Modifier.size(Dimensions.ControlHeight.Standard),
             ) {
                 Icon(
                     imageVector = Icons.Default.MoreVert,

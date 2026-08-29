@@ -45,6 +45,7 @@ import coil3.compose.AsyncImage
 import io.github.aedev.flow.R
 import io.github.aedev.flow.data.model.Playlist
 import io.github.aedev.flow.ui.screens.playlists.PlaylistInfo
+import io.github.aedev.flow.ui.theme.Dimensions
 
 enum class PlaylistCardLayout {
     LIST,
@@ -122,8 +123,8 @@ private fun PlaylistCardContent(
                 Modifier
                     .then(modifier)
                     .clickable(onClick = onClick)
-                    .padding(vertical = 4.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+                    .padding(vertical = Dimensions.Spacing.Xs),
+            verticalArrangement = Arrangement.spacedBy(Dimensions.Spacing.Md),
         ) {
             LayeredPlaylistArtwork(
                 thumbnailUrl = thumbnailUrl,
@@ -149,8 +150,8 @@ private fun PlaylistCardContent(
             modifier
                 .fillMaxWidth()
                 .clickable(onClick = onClick)
-                .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                .padding(vertical = Dimensions.Spacing.Xs),
+        horizontalArrangement = Arrangement.spacedBy(Dimensions.Spacing.Lg),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         LayeredPlaylistArtwork(
@@ -275,7 +276,7 @@ private fun LayeredPlaylistArtwork(
                 modifier =
                     Modifier
                         .align(Alignment.BottomEnd)
-                        .padding(8.dp),
+                        .padding(Dimensions.Spacing.Md),
                 shape = MaterialTheme.shapes.small,
                 color = MaterialTheme.colorScheme.inverseSurface,
                 contentColor = MaterialTheme.colorScheme.inverseOnSurface,
@@ -311,7 +312,7 @@ private fun PlaylistCardText(
 ) {
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(Dimensions.Spacing.Xs),
     ) {
         Text(
             text = title,

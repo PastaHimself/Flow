@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.aedev.flow.R
+import io.github.aedev.flow.ui.theme.Dimensions
 import io.github.aedev.flow.ui.theme.FlowMotion
 import io.github.aedev.flow.ui.theme.rememberFlowReduceMotion
 
@@ -94,18 +95,18 @@ fun FloatingBottomNavBar(
             modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .padding(horizontal = Dimensions.Spacing.Lg, vertical = Dimensions.Spacing.Md),
     ) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(Dimensions.Radius.Xxl),
             color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.96f),
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
             tonalElevation = 3.dp,
-            shadowElevation = 8.dp,
+            shadowElevation = Dimensions.Elevation.Floating,
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth().padding(6.dp),
+                modifier = Modifier.fillMaxWidth().padding(Dimensions.Spacing.Sm),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -218,7 +219,7 @@ private fun BottomNavItem(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(Dimensions.Radius.Lg))
                     .background(indicatorColor)
                     .selectable(
                         selected = selected,
@@ -227,7 +228,7 @@ private fun BottomNavItem(
                         indication = ripple(bounded = true, radius = 28.dp),
                         onClick = onClick,
                     ).semantics(mergeDescendants = true) { }
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                    .padding(horizontal = Dimensions.Spacing.Md, vertical = Dimensions.Spacing.Sm),
         ) {
             Icon(
                 imageVector = icon,
@@ -236,7 +237,7 @@ private fun BottomNavItem(
                 modifier = Modifier.size(22.dp),
             )
 
-            Spacer(modifier = Modifier.height(1.dp))
+            Spacer(modifier = Modifier.height(Dimensions.Spacing.Hairline))
 
             Text(
                 text = label,

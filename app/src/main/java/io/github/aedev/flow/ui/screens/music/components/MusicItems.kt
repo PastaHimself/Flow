@@ -67,12 +67,12 @@ fun TrackListItem(
                     indication = androidx.compose.material3.ripple(),
                     onClick = onClick,
                     onLongClick = onLongClick,
-                ).padding(horizontal = 16.dp, vertical = 8.dp),
+                ).padding(horizontal = Dimensions.Spacing.Xl, vertical = Dimensions.Spacing.Md),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (leadingContent != null) {
             leadingContent()
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(Dimensions.Spacing.Md))
         }
 
         Surface(
@@ -113,7 +113,7 @@ fun TrackListItem(
             }
         }
 
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(Dimensions.Spacing.Xl))
 
         Column(
             modifier = Modifier.weight(1f),
@@ -127,7 +127,7 @@ fun TrackListItem(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(Dimensions.Spacing.Xs))
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(5.dp),
@@ -153,8 +153,8 @@ fun TrackListItem(
                 tint = MaterialTheme.colorScheme.primary,
                 modifier =
                     Modifier
-                        .padding(start = 8.dp)
-                        .size(18.dp),
+                        .padding(start = Dimensions.Spacing.Md)
+                        .size(Dimensions.IconSize.Md),
             )
         }
 
@@ -194,7 +194,7 @@ private fun ExplicitBadge() {
         painter = painterResource(R.drawable.ic_explicit),
         contentDescription = stringResource(R.string.label_explicit),
         tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.size(18.dp),
+        modifier = Modifier.size(Dimensions.IconSize.Md),
     )
 }
 

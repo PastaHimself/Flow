@@ -163,7 +163,7 @@ fun LibraryScreen(
                         text = stringResource(R.string.library_settings_data_header),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
+                        modifier = Modifier.padding(horizontal = Dimensions.Spacing.Md, vertical = Dimensions.Spacing.Md),
                     )
                     LibraryNavigationRow(
                         icon = Icons.Outlined.PermMedia,
@@ -177,7 +177,7 @@ fun LibraryScreen(
                         subtitle = stringResource(R.string.library_manage_data_subtitle),
                         onClick = onManageData,
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(Dimensions.Spacing.Md))
                 }
             }
         }

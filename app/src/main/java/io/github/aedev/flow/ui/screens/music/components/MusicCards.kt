@@ -80,13 +80,13 @@ fun AlbumCard(
                         modifier =
                             Modifier
                                 .align(Alignment.TopEnd)
-                                .padding(8.dp)
-                                .size(18.dp),
+                                .padding(Dimensions.Spacing.Md)
+                                .size(Dimensions.IconSize.Md),
                     )
                 }
             }
         }
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(Dimensions.Spacing.Md))
         Text(
             text = title,
             style = MaterialTheme.typography.bodyMedium,

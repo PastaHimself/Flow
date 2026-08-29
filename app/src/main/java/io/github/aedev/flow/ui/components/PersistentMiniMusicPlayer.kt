@@ -134,7 +134,7 @@ fun PersistentMiniMusicPlayer(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                        .padding(horizontal = Dimensions.Spacing.MdPlus, vertical = Dimensions.Spacing.Xs)
                         .offset { IntOffset(offsetX.roundToInt(), 0) }
                         .graphicsLayer { alpha = dismissAlpha.coerceIn(0f, 1f) }
                         .pointerInput(Unit) {
@@ -216,7 +216,7 @@ fun PersistentMiniMusicPlayer(
                             // Album art + info
                             Row(
                                 modifier = Modifier.weight(1f),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(Dimensions.Spacing.Lg),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 // Album art
@@ -277,7 +277,7 @@ fun PersistentMiniMusicPlayer(
                                         overflow = TextOverflow.Ellipsis,
                                         color = MaterialTheme.colorScheme.onSurface,
                                     )
-                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Spacer(modifier = Modifier.height(Dimensions.Spacing.Xxs))
                                     Text(
                                         text = track.artist,
                                         style =
@@ -294,7 +294,7 @@ fun PersistentMiniMusicPlayer(
 
                             // Controls
                             Row(
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(Dimensions.Spacing.Xs),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 // Play/Pause
@@ -317,7 +317,7 @@ fun PersistentMiniMusicPlayer(
                                 ) {
                                     if (playerState.isBuffering) {
                                         CircularProgressIndicator(
-                                            modifier = Modifier.size(20.dp),
+                                            modifier = Modifier.size(Dimensions.IconSize.Lg),
                                             strokeWidth = 2.dp,
                                             color = MaterialTheme.colorScheme.onPrimary,
                                         )
@@ -337,7 +337,7 @@ fun PersistentMiniMusicPlayer(
                                                 } else {
                                                     stringResource(R.string.play)
                                                 },
-                                            modifier = Modifier.size(24.dp),
+                                            modifier = Modifier.size(Dimensions.IconSize.Xl),
                                             tint = MaterialTheme.colorScheme.onPrimary,
                                         )
                                     }

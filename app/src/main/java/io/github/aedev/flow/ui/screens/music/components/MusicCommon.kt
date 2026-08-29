@@ -29,7 +29,7 @@ fun ErrorContent(
         Column(
             modifier = Modifier.padding(Dimensions.PlayerHorizontalPadding),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(Dimensions.Spacing.Xl),
         ) {
             Icon(
                 imageVector = Icons.Outlined.Error,

@@ -202,7 +202,7 @@ fun HomeScreen(
                                         DeepFlowManager.toggle(context)
                                     }
                                 },
-                                modifier = Modifier.size(32.dp),
+                                modifier = Modifier.size(Dimensions.IconSize.Xxl),
                             )
                         }
                     } else {
@@ -248,7 +248,7 @@ fun HomeScreen(
                                 PaddingValues(
                                     start = if (isListView) 0.dp else layoutConfig.contentPadding,
                                     end = if (isListView) 0.dp else layoutConfig.contentPadding,
-                                    top = 8.dp,
+                                    top = Dimensions.Spacing.Md,
                                     bottom = 0.dp,
                                 ),
                             horizontalArrangement = Arrangement.spacedBy(if (isListView) 0.dp else layoutConfig.cardSpacing),
@@ -290,7 +290,7 @@ fun HomeScreen(
                                 PaddingValues(
                                     start = if (isListView) 0.dp else layoutConfig.contentPadding,
                                     end = if (isListView) 0.dp else layoutConfig.contentPadding,
-                                    top = 4.dp,
+                                    top = Dimensions.Spacing.Xs,
                                     bottom = 0.dp,
                                 ),
                             horizontalArrangement = Arrangement.spacedBy(if (isListView) 0.dp else layoutConfig.cardSpacing),
@@ -449,11 +449,11 @@ fun HomeScreen(
                                         modifier =
                                             Modifier
                                                 .fillMaxWidth()
-                                                .padding(24.dp),
+                                                .padding(Dimensions.Spacing.Xxxl),
                                         contentAlignment = Alignment.Center,
                                     ) {
                                         CircularProgressIndicator(
-                                            modifier = Modifier.size(32.dp),
+                                            modifier = Modifier.size(Dimensions.IconSize.Xxl),
                                             strokeWidth = 3.dp,
                                         )
                                     }
@@ -507,8 +507,8 @@ private fun FeedDisabledState(modifier: Modifier = Modifier) {
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.padding(32.dp),
+            verticalArrangement = Arrangement.spacedBy(Dimensions.Spacing.Lg),
+            modifier = Modifier.padding(Dimensions.Spacing.Xxxxl),
         ) {
             Icon(
                 imageVector = Icons.Outlined.SmartDisplay,
@@ -540,15 +540,15 @@ private fun FlowFeedFooter(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .padding(24.dp),
+                .padding(Dimensions.Spacing.Xxxl),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(Dimensions.Spacing.Lg),
     ) {
         Icon(
             imageVector = Icons.Outlined.AutoAwesome,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(32.dp),
+            modifier = Modifier.size(Dimensions.IconSize.Xxl),
         )
         Text(
             text = stringResource(R.string.personalized_feed),
@@ -562,14 +562,14 @@ private fun FlowFeedFooter(
         )
         OutlinedButton(
             onClick = onRefresh,
-            modifier = Modifier.padding(top = 8.dp),
+            modifier = Modifier.padding(top = Dimensions.Spacing.Md),
         ) {
             Icon(
                 imageVector = Icons.Default.Refresh,
                 contentDescription = null,
-                modifier = Modifier.size(18.dp),
+                modifier = Modifier.size(Dimensions.IconSize.Md),
             )
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(Dimensions.Spacing.Md))
             Text(
                 androidx.compose.ui.res
                     .stringResource(R.string.home_refresh_feed),
@@ -590,7 +590,7 @@ private fun ErrorState(
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(Dimensions.Spacing.Md),
         ) {
             Text(
                 text = message,

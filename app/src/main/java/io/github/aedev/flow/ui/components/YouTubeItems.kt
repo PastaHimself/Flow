@@ -72,10 +72,10 @@ fun ChartTrackItem(
                 .combinedClickable(
                     onClick = onClick,
                     onLongClick = onLongClick,
-                ).padding(horizontal = 12.dp),
+                ).padding(horizontal = Dimensions.Spacing.Lg),
     ) {
         BadgeIcon.ChartPosition(rank)
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(Dimensions.Spacing.Md))
 
         AsyncImage(
             model = thumbnailUrl,
@@ -91,7 +91,7 @@ fun ChartTrackItem(
             modifier =
                 Modifier
                     .weight(1f)
-                    .padding(horizontal = 12.dp),
+                    .padding(horizontal = Dimensions.Spacing.Lg),
         ) {
             Text(
                 text = title,
@@ -120,7 +120,7 @@ fun ChartTrackItem(
                 imageVector = Icons.Rounded.OfflinePin,
                 contentDescription = stringResource(R.string.status_downloaded),
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(18.dp),
+                modifier = Modifier.size(Dimensions.IconSize.Md),
             )
         }
     }

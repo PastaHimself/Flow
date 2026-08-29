@@ -83,11 +83,11 @@ fun ListItem(
         modifier =
             modifier
                 .height(Dimensions.ListItemHeight)
-                .padding(horizontal = 8.dp)
+                .padding(horizontal = Dimensions.Spacing.Md)
                 .then(
                     if (backgroundColor != null) {
                         Modifier
-                            .clip(RoundedCornerShape(8.dp))
+                            .clip(RoundedCornerShape(Dimensions.Radius.Sm))
                             .background(backgroundColor)
                     } else {
                         Modifier
@@ -95,7 +95,7 @@ fun ListItem(
                 ),
     ) {
         Box(
-            modifier = Modifier.padding(6.dp),
+            modifier = Modifier.padding(Dimensions.Spacing.Sm),
             contentAlignment = Alignment.Center,
         ) {
             thumbnailContent()
@@ -117,7 +117,7 @@ fun ListItem(
             modifier =
                 Modifier
                     .weight(1f)
-                    .padding(horizontal = 6.dp),
+                    .padding(horizontal = Dimensions.Spacing.Sm),
         ) {
             Text(
                 text = title,
@@ -211,7 +211,7 @@ fun GridItem(
             thumbnailContent()
         }
 
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(Dimensions.Spacing.Sm))
 
         title()
 
@@ -263,13 +263,13 @@ fun GridItem(
                     modifier =
                         Modifier
                             .align(Alignment.TopEnd)
-                            .padding(8.dp)
-                            .size(18.dp),
+                            .padding(Dimensions.Spacing.Md)
+                            .size(Dimensions.IconSize.Md),
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(Dimensions.Spacing.Sm))
 
         Text(
             text = title,
@@ -308,7 +308,7 @@ fun ListItem(
                 .combinedClickable(
                     onClick = onClick,
                     onLongClick = onLongClick,
-                ).padding(horizontal = 12.dp),
+                ).padding(horizontal = Dimensions.Spacing.Lg),
     ) {
         AsyncImage(
             model = thumbnailUrl,
@@ -317,14 +317,14 @@ fun ListItem(
             modifier =
                 Modifier
                     .size(Dimensions.ListThumbnailSize)
-                    .clip(RoundedCornerShape(Dimensions.ThumbnailCornerRadius)),
+                    .clip(RoundedCornerShape(Dimensions.Radius.Md)),
         )
 
         Column(
             modifier =
                 Modifier
                     .weight(1f)
-                    .padding(horizontal = 12.dp),
+                    .padding(horizontal = Dimensions.Spacing.Lg),
         ) {
             Text(
                 text = title,

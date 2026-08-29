@@ -51,7 +51,7 @@ internal fun LibraryShelf(
                 Modifier
                     .fillMaxWidth()
                     .clickable(onClick = onTitleClick)
-                    .padding(horizontal = Dimensions.ContentPaddingHorizontal, vertical = 12.dp),
+                    .padding(horizontal = Dimensions.ContentPaddingHorizontal, vertical = Dimensions.Spacing.Lg),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
@@ -199,14 +199,14 @@ internal fun LibraryNavigationRow(
                     interactionSource = interactionSource,
                     indication = androidx.compose.material3.ripple(),
                     onClick = onClick,
-                ).padding(horizontal = 16.dp, vertical = 12.dp),
+                ).padding(horizontal = Dimensions.Spacing.Xl, vertical = Dimensions.Spacing.Lg),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(Dimensions.Spacing.Xl),
     ) {
         Box(
             modifier =
                 Modifier
-                    .size(48.dp)
+                    .size(Dimensions.ControlHeight.Touch)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.surfaceContainerHighest),
             contentAlignment = Alignment.Center,
@@ -215,7 +215,7 @@ internal fun LibraryNavigationRow(
                 imageVector = icon,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(Dimensions.IconSize.Xl),
             )
         }
         Column(modifier = Modifier.weight(1f)) {

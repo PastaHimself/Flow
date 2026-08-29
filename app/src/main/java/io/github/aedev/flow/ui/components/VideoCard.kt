@@ -215,8 +215,8 @@ fun VideoCardHorizontal(
                     indication = androidx.compose.material3.ripple(),
                     onLongClick = { showQuickActions = true },
                     onClick = onClick,
-                ).padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ).padding(horizontal = Dimensions.Spacing.Xl, vertical = Dimensions.Spacing.Md),
+        horizontalArrangement = Arrangement.spacedBy(Dimensions.Spacing.Lg),
     ) {
         Box(
             modifier =
@@ -416,7 +416,7 @@ fun VideoCardFullWidth(
                     indication = androidx.compose.material3.ripple(),
                     onLongClick = { showQuickActions = true },
                     onClick = onClick,
-                ).then(if (useInternalPadding) Modifier.padding(horizontal = 12.dp) else Modifier),
+                ).then(if (useInternalPadding) Modifier.padding(horizontal = Dimensions.Spacing.Lg) else Modifier),
     ) {
         // Thumbnail with duration
         Box(
@@ -524,8 +524,8 @@ fun VideoCardFullWidth(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 12.dp, horizontal = Dimensions.ContentPaddingHorizontal),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    .padding(vertical = Dimensions.Spacing.Lg, horizontal = Dimensions.ContentPaddingHorizontal),
+            horizontalArrangement = Arrangement.spacedBy(Dimensions.Spacing.Lg),
         ) {
             if (showChannelAvatar) {
                 ChannelAvatarStack(
@@ -544,7 +544,7 @@ fun VideoCardFullWidth(
             // Video details
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(Dimensions.Spacing.Sm),
             ) {
                 Text(
                     text = displayTitle,
@@ -602,7 +602,7 @@ fun VideoCardFullWidth(
             // More options button
             IconButton(
                 onClick = { showQuickActions = true },
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(Dimensions.IconSize.Xl),
             ) {
                 Icon(
                     imageVector = Icons.Default.MoreVert,
@@ -618,14 +618,14 @@ fun VideoCardFullWidth(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp)
-                        .padding(bottom = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
+                        .padding(horizontal = Dimensions.Spacing.Lg)
+                        .padding(bottom = Dimensions.Spacing.MdPlus),
+                verticalArrangement = Arrangement.spacedBy(Dimensions.Spacing.Sm),
             ) {
                 if (videoCardActionsEnabledFW) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(Dimensions.Spacing.Md),
                     ) {
                         Row(
                             modifier =
@@ -640,10 +640,10 @@ fun VideoCardFullWidth(
                             Icon(
                                 Icons.Outlined.ThumbUp,
                                 contentDescription = stringResource(R.string.i_like_this),
-                                modifier = Modifier.size(16.dp),
+                                modifier = Modifier.size(Dimensions.IconSize.Sm),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
-                            Spacer(modifier = Modifier.width(6.dp))
+                            Spacer(modifier = Modifier.width(Dimensions.Spacing.Sm))
                             Text(
                                 text = stringResource(R.string.i_like_this),
                                 style = MaterialTheme.typography.labelMedium,
@@ -663,10 +663,10 @@ fun VideoCardFullWidth(
                             Icon(
                                 Icons.Outlined.ThumbDown,
                                 contentDescription = stringResource(R.string.not_interested),
-                                modifier = Modifier.size(16.dp),
+                                modifier = Modifier.size(Dimensions.IconSize.Sm),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
-                            Spacer(modifier = Modifier.width(6.dp))
+                            Spacer(modifier = Modifier.width(Dimensions.Spacing.Sm))
                             Text(
                                 text = stringResource(R.string.not_interested),
                                 style = MaterialTheme.typography.labelMedium,
@@ -698,10 +698,10 @@ fun VideoCardFullWidth(
                         Icon(
                             Icons.Outlined.Visibility,
                             contentDescription = stringResource(R.string.mark_as_watched),
-                            modifier = Modifier.size(16.dp),
+                            modifier = Modifier.size(Dimensions.IconSize.Sm),
                             tint = watchedTint,
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(Dimensions.Spacing.Sm))
                         Text(
                             text = stringResource(R.string.mark_as_watched),
                             style = MaterialTheme.typography.labelMedium,
@@ -778,7 +778,7 @@ fun CompactVideoCard(
                     indication = androidx.compose.material3.ripple(),
                     onLongClick = { showQuickActions = true },
                     onClick = onClick,
-                ).padding(vertical = 8.dp, horizontal = 12.dp),
+                ).padding(vertical = Dimensions.Spacing.Md, horizontal = Dimensions.Spacing.Lg),
     ) {
         // Thumbnail (Left side)
         Box(
@@ -871,7 +871,7 @@ fun CompactVideoCard(
             }
         }
 
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.width(Dimensions.Spacing.Lg))
 
         // Info (Right side)
         Column(
@@ -889,7 +889,7 @@ fun CompactVideoCard(
                 fontWeight = FontWeight.SemiBold,
             )
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(Dimensions.Spacing.Sm))
 
             Text(
                 text = displayChannelName,
@@ -937,17 +937,17 @@ fun CompactVideoCard(
         Column(
             modifier = Modifier.align(Alignment.Top),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(24.dp),
+            verticalArrangement = Arrangement.spacedBy(Dimensions.Spacing.Xxxl),
         ) {
             IconButton(
                 onClick = { showQuickActions = true },
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(Dimensions.IconSize.Xl),
             ) {
                 Icon(
                     imageVector = Icons.Default.MoreVert,
                     contentDescription = stringResource(R.string.more_options),
                     tint = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.size(16.dp),
+                    modifier = Modifier.size(Dimensions.IconSize.Sm),
                 )
             }
 
@@ -956,13 +956,13 @@ fun CompactVideoCard(
                     onClick = {
                         if (!isWatchedCompact) quickActionsVmCompact.markAsWatched(video)
                     },
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(Dimensions.IconSize.Xl),
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Visibility,
                         contentDescription = stringResource(R.string.mark_as_watched),
                         tint = if (isWatchedCompact) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.size(16.dp),
+                        modifier = Modifier.size(Dimensions.IconSize.Sm),
                     )
                 }
             }
@@ -1011,13 +1011,13 @@ fun CollaboratorsBottomSheet(
                 Modifier
                     .fillMaxWidth()
                     .navigationBarsPadding()
-                    .padding(bottom = 16.dp),
+                    .padding(bottom = Dimensions.Spacing.Xl),
         ) {
             Text(
                 text = stringResource(R.string.collaborators),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+                modifier = Modifier.padding(horizontal = Dimensions.Spacing.Xxxl, vertical = Dimensions.Spacing.Lg),
             )
 
             collaborators.forEach { collaborator ->
@@ -1027,14 +1027,14 @@ fun CollaboratorsBottomSheet(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 24.dp, vertical = 10.dp),
+                            .padding(horizontal = Dimensions.Spacing.Xxxl, vertical = Dimensions.Spacing.MdPlus),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(Dimensions.Spacing.Xl),
                 ) {
                     ChannelAvatarStack(
                         urls = listOf(collaborator.thumbnailUrl).filter { it.isNotBlank() },
                         contentDescription = collaborator.name,
-                        avatarSize = 48.dp,
+                        avatarSize = Dimensions.ControlHeight.Touch,
                     )
                     Column(
                         modifier =
@@ -1108,22 +1108,22 @@ fun ContinueWatchingShelf(
         }
     if (uniqueEntries.isEmpty()) return
     val context = LocalContext.current
-    Column(modifier = modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+    Column(modifier = modifier.fillMaxWidth().padding(vertical = Dimensions.Spacing.Xs)) {
         Row(
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .then(if (onSeeAllClick != null) Modifier.clickable(onClick = onSeeAllClick) else Modifier)
-                    .padding(horizontal = Dimensions.ContentPaddingHorizontal, vertical = 8.dp),
+                    .padding(horizontal = Dimensions.ContentPaddingHorizontal, vertical = Dimensions.Spacing.Md),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
                 imageVector = Icons.Filled.PlayCircle,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(Dimensions.IconSize.Xl),
             )
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(Dimensions.Spacing.Md))
             Text(
                 text = context.getString(R.string.continue_watching_title),
                 style = MaterialTheme.typography.titleMedium,
@@ -1135,13 +1135,13 @@ fun ContinueWatchingShelf(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(Dimensions.IconSize.Xl),
                 )
             }
         }
         LazyRow(
             contentPadding = PaddingValues(horizontal = Dimensions.ContentPaddingHorizontal),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(Dimensions.Spacing.MdPlus),
         ) {
             items(uniqueEntries, key = { it.videoId }) { entry ->
                 ContinueWatchingCard(
@@ -1194,7 +1194,7 @@ private fun ContinueWatchingCard(
                     imageVector = Icons.Filled.Close,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(16.dp),
+                    modifier = Modifier.size(Dimensions.IconSize.Sm),
                 )
             }
         },
@@ -1271,7 +1271,7 @@ private fun ShelfVideoCardContent(
                 )
             }
         }
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(Dimensions.Spacing.Sm))
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.Top,
@@ -1288,7 +1288,7 @@ private fun ShelfVideoCardContent(
                     fontWeight = FontWeight.SemiBold,
                 )
                 if (channelName.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(Dimensions.Spacing.Xs))
                     Text(
                         text = channelName,
                         style = MaterialTheme.typography.labelSmall,
@@ -1328,22 +1328,22 @@ fun ShortsShelf(
         }
     if (uniqueShorts.isEmpty()) return
     val context = LocalContext.current
-    Column(modifier = modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+    Column(modifier = modifier.fillMaxWidth().padding(vertical = Dimensions.Spacing.Xs)) {
         Row(
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .then(if (onSeeAllClick != null) Modifier.clickable(onClick = onSeeAllClick) else Modifier)
-                    .padding(horizontal = Dimensions.ContentPaddingHorizontal, vertical = 8.dp),
+                    .padding(horizontal = Dimensions.ContentPaddingHorizontal, vertical = Dimensions.Spacing.Md),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
                 imageVector = ImageVector.vectorResource(id = R.drawable.ic_shorts),
                 contentDescription = stringResource(R.string.shorts),
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(Dimensions.IconSize.Xl),
             )
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(Dimensions.Spacing.Md))
             Text(
                 text = context.getString(R.string.shorts),
                 style = MaterialTheme.typography.titleMedium,
@@ -1355,14 +1355,14 @@ fun ShortsShelf(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(Dimensions.IconSize.Xl),
                 )
             }
         }
 
         LazyRow(
             contentPadding = PaddingValues(horizontal = Dimensions.ContentPaddingHorizontal),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(Dimensions.Spacing.MdPlus),
         ) {
             items(uniqueShorts, key = { it.id }) { short ->
                 ShortsCard(video = short, onClick = { onShortClick(uniqueShorts, short) })
@@ -1409,7 +1409,7 @@ fun ShortsCard(
             )
             ShortWatchedIndicator(videoId = video.id)
         }
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(Dimensions.Spacing.Md))
         Text(
             text = video.title,
             maxLines = 2,

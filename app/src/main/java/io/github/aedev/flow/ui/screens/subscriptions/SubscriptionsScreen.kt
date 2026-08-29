@@ -412,9 +412,9 @@ fun SubscriptionsScreen(
                                     Icon(
                                         imageVector = Icons.Default.OndemandVideo,
                                         contentDescription = null,
-                                        modifier = Modifier.size(18.dp),
+                                        modifier = Modifier.size(Dimensions.IconSize.Md),
                                     )
-                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Spacer(modifier = Modifier.width(Dimensions.Spacing.Md))
                                     Text(stringResource(R.string.subscriptions_video_section_title))
                                 }
                             }
@@ -428,9 +428,9 @@ fun SubscriptionsScreen(
                                     Icon(
                                         imageVector = Icons.Default.MusicNote,
                                         contentDescription = null,
-                                        modifier = Modifier.size(18.dp),
+                                        modifier = Modifier.size(Dimensions.IconSize.Md),
                                     )
-                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Spacer(modifier = Modifier.width(Dimensions.Spacing.Md))
                                     Text(stringResource(R.string.subscriptions_music_section_title))
                                 }
                             }
@@ -439,7 +439,7 @@ fun SubscriptionsScreen(
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(Dimensions.Spacing.Lg),
                         ) {
                             item {
                                 Text(
@@ -555,7 +555,7 @@ fun SubscriptionsScreen(
                                                             .fillMaxWidth()
                                                             .horizontalScroll(rememberScrollState())
                                                             .padding(horizontal = 12.dp, vertical = 8.dp),
-                                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                    horizontalArrangement = Arrangement.spacedBy(Dimensions.Spacing.Md),
                                                     verticalAlignment = Alignment.CenterVertically,
                                                 ) {
                                                     FilterChip(
@@ -572,12 +572,12 @@ fun SubscriptionsScreen(
                                                     }
                                                     IconButton(
                                                         onClick = { showGroupsDialog = true },
-                                                        modifier = Modifier.size(32.dp),
+                                                        modifier = Modifier.size(Dimensions.IconSize.Xxl),
                                                     ) {
                                                         Icon(
                                                             Icons.Default.Edit,
                                                             contentDescription = stringResource(R.string.manage_groups),
-                                                            modifier = Modifier.size(18.dp),
+                                                            modifier = Modifier.size(Dimensions.IconSize.Md),
                                                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                                         )
                                                     }
@@ -651,7 +651,7 @@ fun SubscriptionsScreen(
                                                         onShortClick(ShortsQueueSource.Subscriptions(tapped.id))
                                                     },
                                                 )
-                                                Spacer(modifier = Modifier.height(8.dp))
+                                                Spacer(modifier = Modifier.height(Dimensions.Spacing.Md))
                                                 HorizontalDivider(
                                                     thickness = 4.dp,
                                                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
@@ -752,7 +752,7 @@ private fun CompactSubscriptionsHeader(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp),
+                    .padding(horizontal = Dimensions.Spacing.Lg),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -769,13 +769,13 @@ private fun CompactSubscriptionsHeader(
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(Dimensions.Spacing.Sm),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
                             imageVector = Icons.Default.MusicNote,
                             contentDescription = null,
-                            modifier = Modifier.size(14.dp),
+                            modifier = Modifier.size(Dimensions.IconSize.Xs),
                         )
                         Text(
                             text = stringResource(R.string.subscriptions_music_chip_label),
@@ -788,7 +788,7 @@ private fun CompactSubscriptionsHeader(
 
         LazyRow(
             contentPadding = PaddingValues(start = 12.dp, end = 8.dp, top = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(Dimensions.Spacing.Lg),
         ) {
             items(channels, key = { it.id }) { channel ->
                 ChannelAvatarItem(
@@ -824,7 +824,7 @@ private fun GroupsManagerDialog(
                         text = stringResource(R.string.no_groups_yet),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(vertical = 8.dp),
+                        modifier = Modifier.padding(vertical = Dimensions.Spacing.Md),
                     )
                 } else {
                     groups.forEachIndexed { index, group ->
@@ -832,7 +832,7 @@ private fun GroupsManagerDialog(
                             modifier =
                                 Modifier
                                     .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
+                                    .padding(vertical = Dimensions.Spacing.Xs),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
@@ -854,25 +854,25 @@ private fun GroupsManagerDialog(
                             IconButton(
                                 onClick = { onMoveUp(group) },
                                 enabled = index > 0,
-                                modifier = Modifier.size(32.dp),
+                                modifier = Modifier.size(Dimensions.IconSize.Xxl),
                             ) {
-                                Icon(Icons.Default.KeyboardArrowUp, null, modifier = Modifier.size(16.dp))
+                                Icon(Icons.Default.KeyboardArrowUp, null, modifier = Modifier.size(Dimensions.IconSize.Sm))
                             }
                             IconButton(
                                 onClick = { onMoveDown(group) },
                                 enabled = index < groups.lastIndex,
-                                modifier = Modifier.size(32.dp),
+                                modifier = Modifier.size(Dimensions.IconSize.Xxl),
                             ) {
-                                Icon(Icons.Default.KeyboardArrowDown, null, modifier = Modifier.size(16.dp))
+                                Icon(Icons.Default.KeyboardArrowDown, null, modifier = Modifier.size(Dimensions.IconSize.Sm))
                             }
-                            IconButton(onClick = { onEdit(group) }, modifier = Modifier.size(32.dp)) {
-                                Icon(Icons.Default.Edit, null, modifier = Modifier.size(16.dp))
+                            IconButton(onClick = { onEdit(group) }, modifier = Modifier.size(Dimensions.IconSize.Xxl)) {
+                                Icon(Icons.Default.Edit, null, modifier = Modifier.size(Dimensions.IconSize.Sm))
                             }
-                            IconButton(onClick = { onDelete(group) }, modifier = Modifier.size(32.dp)) {
+                            IconButton(onClick = { onDelete(group) }, modifier = Modifier.size(Dimensions.IconSize.Xxl)) {
                                 Icon(
                                     Icons.Default.Delete,
                                     null,
-                                    modifier = Modifier.size(16.dp),
+                                    modifier = Modifier.size(Dimensions.IconSize.Sm),
                                     tint = MaterialTheme.colorScheme.error,
                                 )
                             }
@@ -883,8 +883,8 @@ private fun GroupsManagerDialog(
         },
         confirmButton = {
             TextButton(onClick = onCreateNew) {
-                Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(4.dp))
+                Icon(Icons.Default.Add, null, modifier = Modifier.size(Dimensions.IconSize.Sm))
+                Spacer(modifier = Modifier.width(Dimensions.Spacing.Xs))
                 Text(stringResource(R.string.new_group))
             }
         },
@@ -931,7 +931,7 @@ private fun CreateEditGroupDialog(
             )
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(Dimensions.Spacing.Md)) {
                 OutlinedTextField(
                     value = groupName,
                     onValueChange = { groupName = it },
@@ -943,13 +943,13 @@ private fun CreateEditGroupDialog(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
                     placeholder = { Text(stringResource(R.string.search_channels_hint)) },
-                    leadingIcon = { Icon(Icons.Default.Search, null, modifier = Modifier.size(18.dp)) },
+                    leadingIcon = { Icon(Icons.Default.Search, null, modifier = Modifier.size(Dimensions.IconSize.Md)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 LazyColumn(
                     modifier = Modifier.heightIn(max = 280.dp),
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                    verticalArrangement = Arrangement.spacedBy(Dimensions.Spacing.Xxs),
                 ) {
                     items(filteredChannels, key = { it.id }) { channel ->
                         val isChecked = channel.id in selectedChannelIds.value
@@ -982,7 +982,7 @@ private fun CreateEditGroupDialog(
                                         .background(MaterialTheme.colorScheme.surfaceVariant),
                                 contentScale = ContentScale.Crop,
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(Dimensions.Spacing.Md))
                             Text(
                                 text = channel.name,
                                 style = MaterialTheme.typography.bodyMedium,
@@ -1060,7 +1060,7 @@ fun ChannelAvatarItem(
                 }
             }
         }
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(Dimensions.Spacing.Xs))
         Text(
             text = channel.name,
             style = MaterialTheme.typography.labelSmall,
@@ -1095,7 +1095,7 @@ private fun AllSubscriptionsAvatarItem(onClick: () -> Unit) {
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(Dimensions.Spacing.Xs))
         Text(
             text = stringResource(R.string.view_all_button_label),
             style = MaterialTheme.typography.labelSmall,
@@ -1122,7 +1122,7 @@ private fun ChannelTypeBadge(
         tonalElevation = 2.dp,
     ) {
         Box(
-            modifier = Modifier.padding(4.dp),
+            modifier = Modifier.padding(Dimensions.Spacing.Xs),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -1160,7 +1160,7 @@ fun SubscriptionManagerItem(
                     interactionSource = interactionSource,
                     indication = androidx.compose.material3.ripple(),
                     onClick = onClick,
-                ).padding(16.dp),
+                ).padding(Dimensions.Spacing.Xl),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         AsyncImage(
@@ -1174,11 +1174,11 @@ fun SubscriptionManagerItem(
             contentScale = ContentScale.Crop,
         )
 
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(Dimensions.Spacing.Xl))
 
         Column(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+            verticalArrangement = Arrangement.spacedBy(Dimensions.Spacing.Xs),
         ) {
             Text(
                 text = channel.name,
@@ -1195,7 +1195,7 @@ fun SubscriptionManagerItem(
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(Dimensions.Spacing.Xs),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
@@ -1226,14 +1226,14 @@ fun SubscriptionManagerItem(
                 Icon(
                     imageVector = if (isNotificationsEnabled) Icons.Rounded.NotificationsActive else Icons.Rounded.NotificationsOff,
                     contentDescription = null,
-                    modifier = Modifier.size(16.dp),
+                    modifier = Modifier.size(Dimensions.IconSize.Sm),
                 )
-                Spacer(modifier = Modifier.width(4.dp))
+                Spacer(modifier = Modifier.width(Dimensions.Spacing.Xs))
                 Text(
                     stringResource(R.string.subscribed),
                 )
-                Spacer(modifier = Modifier.width(2.dp))
-                Icon(Icons.Rounded.KeyboardArrowDown, null, modifier = Modifier.size(14.dp))
+                Spacer(modifier = Modifier.width(Dimensions.Spacing.Xxs))
+                Icon(Icons.Rounded.KeyboardArrowDown, null, modifier = Modifier.size(Dimensions.IconSize.Xs))
             }
             DropdownMenu(
                 expanded = expanded,
@@ -1336,7 +1336,7 @@ private fun EmptySubscriptionsState(modifier: Modifier = Modifier) {
             color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center,
         )
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(Dimensions.Spacing.Md))
         Text(
             text = context.getString(R.string.empty_subscriptions_body),
             style = MaterialTheme.typography.bodyLarge,

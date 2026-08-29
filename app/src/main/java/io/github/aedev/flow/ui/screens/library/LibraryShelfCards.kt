@@ -56,8 +56,8 @@ internal fun LibraryVideoCard(
                     interactionSource = interactionSource,
                     indication = androidx.compose.material3.ripple(),
                     onClick = onClick,
-                ).padding(vertical = 4.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+                ).padding(vertical = Dimensions.Spacing.Xs),
+        verticalArrangement = Arrangement.spacedBy(Dimensions.Spacing.Md),
     ) {
         Box(
             modifier =
@@ -80,7 +80,7 @@ internal fun LibraryVideoCard(
                     modifier =
                         Modifier
                             .align(Alignment.BottomEnd)
-                            .padding(8.dp),
+                            .padding(Dimensions.Spacing.Md),
                     shape = MaterialTheme.shapes.small,
                     color = MaterialTheme.colorScheme.inverseSurface,
                     contentColor = MaterialTheme.colorScheme.inverseOnSurface,
@@ -95,7 +95,7 @@ internal fun LibraryVideoCard(
             }
         }
 
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(Dimensions.Spacing.Xs)) {
             Text(
                 text = video.title,
                 style = MaterialTheme.typography.bodyMedium,
@@ -134,8 +134,8 @@ internal fun LibraryAlbumCard(
                     interactionSource = interactionSource,
                     indication = androidx.compose.material3.ripple(),
                     onClick = onClick,
-                ).padding(vertical = 4.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+                ).padding(vertical = Dimensions.Spacing.Xs),
+        verticalArrangement = Arrangement.spacedBy(Dimensions.Spacing.Md),
     ) {
         Surface(
             modifier = Modifier.size(LibraryShelfArtworkHeight),
@@ -156,7 +156,7 @@ internal fun LibraryAlbumCard(
                         modifier =
                             Modifier
                                 .align(Alignment.TopEnd)
-                                .padding(8.dp),
+                                .padding(Dimensions.Spacing.Md),
                         shape = MaterialTheme.shapes.small,
                         color = MaterialTheme.colorScheme.inverseSurface,
                         contentColor = MaterialTheme.colorScheme.inverseOnSurface,
@@ -166,15 +166,15 @@ internal fun LibraryAlbumCard(
                             contentDescription = stringResource(R.string.status_downloaded),
                             modifier =
                                 Modifier
-                                    .padding(4.dp)
-                                    .size(14.dp),
+                                    .padding(Dimensions.Spacing.Xs)
+                                    .size(Dimensions.IconSize.Xs),
                         )
                     }
                 }
             }
         }
 
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(Dimensions.Spacing.Xs)) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyMedium,

@@ -53,19 +53,19 @@ fun LibraryOverviewCard(
         tonalElevation = 2.dp,
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            modifier = Modifier.padding(Dimensions.Spacing.Xl),
+            verticalArrangement = Arrangement.spacedBy(Dimensions.Spacing.Lg),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(Dimensions.Spacing.MdPlus),
             ) {
                 Icon(
                     imageVector = Icons.Outlined.AutoAwesome,
                     contentDescription = null,
                     tint = FlowRed,
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(Dimensions.IconSize.Xl),
                 )
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
@@ -85,7 +85,7 @@ fun LibraryOverviewCard(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(Dimensions.Spacing.Md),
             ) {
                 LibraryQuickAction(
                     icon = Icons.Outlined.History,
@@ -130,16 +130,16 @@ private fun LibraryQuickAction(
                 .height(88.dp)
                 .background(
                     color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(Dimensions.Radius.Lg),
                 ).pressScale(interactionSource)
                 .clickable(
                     interactionSource = interactionSource,
                     indication = ripple(),
                     role = Role.Button,
                     onClick = onClick,
-                ).padding(horizontal = 4.dp, vertical = 10.dp),
+                ).padding(horizontal = Dimensions.Spacing.Xs, vertical = Dimensions.Spacing.MdPlus),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(Dimensions.Spacing.Sm),
     ) {
         Icon(
             imageVector = icon,

@@ -33,14 +33,14 @@ fun SectionHeader(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = Dimensions.ContentPaddingHorizontal, vertical = 16.dp),
+                .padding(horizontal = Dimensions.ContentPaddingHorizontal, vertical = Dimensions.Spacing.Xl),
     ) {
         if (subtitle != null) {
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                modifier = Modifier.padding(bottom = 2.dp),
+                modifier = Modifier.padding(bottom = Dimensions.Spacing.Xxs),
             )
         }
         Row(
@@ -57,21 +57,21 @@ fun SectionHeader(
             if (onPlayAll != null) {
                 Surface(
                     onClick = onPlayAll,
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(Dimensions.Radius.Md),
                     color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.72f),
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)),
-                    modifier = Modifier.height(36.dp),
+                    modifier = Modifier.height(Dimensions.ControlHeight.Standard),
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 12.dp),
+                        modifier = Modifier.padding(horizontal = Dimensions.Spacing.Lg),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(Dimensions.Spacing.Sm),
                     ) {
                         Icon(
                             imageVector = Icons.Default.PlayArrow,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(18.dp),
+                            modifier = Modifier.size(Dimensions.IconSize.Md),
                         )
                         Text(
                             stringResource(R.string.action_play_all),
