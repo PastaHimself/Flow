@@ -6,10 +6,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -61,7 +59,6 @@ fun TvInterfaceSettingsPane(
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
-    val focusManager = LocalFocusManager.current
     val selectedMode by modePreferences.mode.collectAsStateWithLifecycle(initialValue = AppUiMode.AUTOMATIC)
 
     Column(
@@ -85,12 +82,7 @@ fun TvInterfaceSettingsPane(
                 selected = selectedMode == mode,
                 onClick = {
                     if (mode != selectedMode) {
-                        scope.launch {
-                            // Release focus before the whole UI tree is swapped out.
-                            focusManager.clearFocus(force = true)
-                            withFrameNanos { }
-                            modePreferences.setMode(mode)
-                        }
+                        scope.launch { modePreferences.setMode(mode) }
                     }
                 },
             )

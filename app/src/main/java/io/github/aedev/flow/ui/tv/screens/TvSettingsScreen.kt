@@ -49,6 +49,7 @@ fun TvSettingsScreen(
     modifier: Modifier = Modifier,
     onOpenSync: () -> Unit = {},
     onOpenRemoteGuide: () -> Unit = {},
+    onOpenImportData: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val playerPreferences = remember { PlayerPreferences(context.applicationContext) }
@@ -82,13 +83,15 @@ fun TvSettingsScreen(
                             when (category) {
                                 TvSettingsCategory.SYNC -> onOpenSync()
                                 TvSettingsCategory.REMOTE_GUIDE -> onOpenRemoteGuide()
+                                TvSettingsCategory.IMPORT_DATA -> onOpenImportData()
                                 else -> selectedCategory = category
                             }
                         },
                         onFocused = {
                             // Route categories need an explicit click; panes follow focus.
                             if (category != TvSettingsCategory.SYNC &&
-                                category != TvSettingsCategory.REMOTE_GUIDE
+                                category != TvSettingsCategory.REMOTE_GUIDE &&
+                                category != TvSettingsCategory.IMPORT_DATA
                             ) {
                                 selectedCategory = category
                             }
@@ -107,6 +110,7 @@ fun TvSettingsScreen(
                     TvSettingsCategory.INTERFACE -> TvInterfaceSettingsPane(modePreferences)
                     TvSettingsCategory.ABOUT -> TvAboutSettingsPane()
                     TvSettingsCategory.REMOTE_GUIDE,
+                    TvSettingsCategory.IMPORT_DATA,
                     TvSettingsCategory.SYNC,
                     -> Unit
                 }

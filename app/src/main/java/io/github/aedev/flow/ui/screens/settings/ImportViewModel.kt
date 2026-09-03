@@ -77,6 +77,33 @@ class ImportViewModel
 
         // ── Public import launchers ───────────────────────────────────────────────
 
+        fun importFlowBackup(uri: Uri) {
+            if (isRunning) return
+            val label = context.getString(R.string.import_flow_backup_item_title)
+            val successMessage = context.getString(R.string.import_flow_backup_success)
+            viewModelScope.launch {
+                startProgress(label, 0, 0)
+                try {
+                    val result = backupRepo.importData(uri)
+                    if (result.isSuccess) {
+                        _state.value = State.Success(label, message = successMessage)
+                        if (NotificationHelper.hasNotificationPermission(context)) {
+                            NotificationHelper.showImportComplete(context, label, 0, successMessage)
+                        }
+                    } else {
+                        val msg = result.exceptionOrNull()?.message ?: context.getString(R.string.unknown_error)
+                        _state.value = State.Error(label, msg)
+                    }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    _state.value = State.Error(label, e.message ?: context.getString(R.string.unknown_error))
+                } finally {
+                    NotificationHelper.cancelImportNotification(context)
+                }
+            }
+        }
+
         fun importNewPipe(uri: Uri) {
             if (isRunning) return
             val label = context.getString(R.string.import_label_newpipe_subscriptions)
