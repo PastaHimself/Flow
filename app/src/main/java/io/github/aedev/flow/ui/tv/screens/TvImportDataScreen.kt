@@ -28,7 +28,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.aedev.flow.R
 import io.github.aedev.flow.ui.screens.settings.ImportViewModel
-import io.github.aedev.flow.ui.screens.settings.OpmlImportViewModel
 import io.github.aedev.flow.ui.tv.components.TvButton
 import io.github.aedev.flow.ui.tv.components.TvScreenScaffold
 import io.github.aedev.flow.ui.tv.components.TvSelectionRow
@@ -48,8 +47,6 @@ fun TvImportDataScreen(
     val activity = context as ComponentActivity
     val viewModel: ImportViewModel = hiltViewModel(activity)
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val opmlViewModel: OpmlImportViewModel = hiltViewModel(activity)
-    val opmlState by opmlViewModel.state.collectAsStateWithLifecycle()
     val dimens = LocalTvDimens.current
 
     val flowBackupLauncher =
@@ -62,7 +59,7 @@ fun TvImportDataScreen(
         }
     val opmlLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-            uri?.let(opmlViewModel::importSubscriptions)
+            uri?.let(viewModel::importOpmlSubscriptions)
         }
     val newPipeLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -98,7 +95,6 @@ fun TvImportDataScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             ImportStatus(state = state, onDismiss = viewModel::dismiss)
-            ImportStatus(state = opmlState, onDismiss = opmlViewModel::dismiss)
 
             Column(
                 modifier = Modifier.widthIn(max = 760.dp),
