@@ -140,10 +140,11 @@ fun FlowTvApp(
                 )
             } else {
                 CompositionLocalProvider(
-                    LocalTvPlayerChannelAction provides TvPlayerChannelAction(
-                        channelRef = video.channelId.takeIf { it.isNotBlank() },
-                        onOpenChannel = ::openVideoChannel,
-                    ),
+                    LocalTvPlayerChannelAction provides
+                        TvPlayerChannelAction(
+                            channelRef = video.channelId.takeIf { it.isNotBlank() },
+                            onOpenChannel = ::openVideoChannel,
+                        ),
                 ) {
                     TvPlayerScreen(
                         video = video,
