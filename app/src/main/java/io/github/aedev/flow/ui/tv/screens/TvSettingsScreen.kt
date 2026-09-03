@@ -89,7 +89,8 @@ fun TvSettingsScreen(
                         },
                         onFocused = {
                             // Route categories need an explicit click; panes follow focus.
-                            if (category != TvSettingsCategory.SYNC &&
+                            if (
+                                category != TvSettingsCategory.SYNC &&
                                 category != TvSettingsCategory.REMOTE_GUIDE &&
                                 category != TvSettingsCategory.IMPORT_DATA
                             ) {
