@@ -28,6 +28,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.aedev.flow.R
 import io.github.aedev.flow.ui.screens.settings.ImportViewModel
+import io.github.aedev.flow.ui.screens.settings.OpmlImportViewModel
 import io.github.aedev.flow.ui.tv.components.TvButton
 import io.github.aedev.flow.ui.tv.components.TvScreenScaffold
 import io.github.aedev.flow.ui.tv.components.TvSelectionRow
@@ -47,6 +48,8 @@ fun TvImportDataScreen(
     val activity = context as ComponentActivity
     val viewModel: ImportViewModel = hiltViewModel(activity)
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val opmlViewModel: OpmlImportViewModel = hiltViewModel(activity)
+    val opmlState by opmlViewModel.state.collectAsStateWithLifecycle()
     val dimens = LocalTvDimens.current
 
     val flowBackupLauncher =
@@ -56,6 +59,10 @@ fun TvImportDataScreen(
     val masterBackupLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             uri?.let(viewModel::importMasterBackup)
+        }
+    val opmlLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            uri?.let(opmlViewModel::importSubscriptions)
         }
     val newPipeLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -91,6 +98,7 @@ fun TvImportDataScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             ImportStatus(state = state, onDismiss = viewModel::dismiss)
+            ImportStatus(state = opmlState, onDismiss = opmlViewModel::dismiss)
 
             Column(
                 modifier = Modifier.widthIn(max = 760.dp),
@@ -108,6 +116,12 @@ fun TvImportDataScreen(
                     supportingText = stringResource(R.string.import_master_backup_desc),
                     selected = false,
                     onClick = { masterBackupLauncher.launch(zipMimeTypes) },
+                )
+                TvSelectionRow(
+                    label = stringResource(R.string.import_subscriptions_xml_title),
+                    supportingText = stringResource(R.string.import_subscriptions_xml_desc),
+                    selected = false,
+                    onClick = { opmlLauncher.launch(xmlMimeTypes) },
                 )
                 TvSelectionRow(
                     label = stringResource(R.string.import_from_newpipe),
@@ -193,6 +207,15 @@ private val jsonMimeTypes =
     arrayOf(
         "application/json",
         "text/json",
+        "text/plain",
+        "application/octet-stream",
+    )
+
+private val xmlMimeTypes =
+    arrayOf(
+        "application/xml",
+        "text/xml",
+        "application/rss+xml",
         "text/plain",
         "application/octet-stream",
     )
