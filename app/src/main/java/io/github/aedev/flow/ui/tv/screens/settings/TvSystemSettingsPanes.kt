@@ -82,7 +82,9 @@ fun TvInterfaceSettingsPane(
                 selected = selectedMode == mode,
                 onClick = {
                     if (mode != selectedMode) {
-                        scope.launch { modePreferences.setMode(mode) }
+                        scope.launch {
+                            modePreferences.setMode(mode)
+                        }
                     }
                 },
             )
