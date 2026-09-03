@@ -96,8 +96,8 @@ fun BoxScope.TvPlayerOverlay(
                 }
                 if (channelName.isNotBlank()) {
                     val channelAction = LocalTvPlayerChannelAction.current
-                    val channelRef = channelAction?.channelRef?.takeIf { it.isNotBlank() }
-                    if (channelAction != null && channelRef != null) {
+                    val channelRef = channelAction?.channelRef
+                    if (channelAction != null && !channelRef.isNullOrBlank()) {
                         TvButton(
                             text = channelName,
                             onClick = { channelAction.onOpenChannel(channelRef) },
