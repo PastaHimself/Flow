@@ -138,7 +138,10 @@ private fun ImportStatus(
     onDismiss: () -> Unit,
 ) {
     when (state) {
-        ImportViewModel.State.Idle -> Unit
+        ImportViewModel.State.Idle -> {
+            Unit
+        }
+
         is ImportViewModel.State.Running -> {
             Column(
                 modifier = Modifier.fillMaxWidth().widthIn(max = 760.dp),
