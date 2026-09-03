@@ -8,6 +8,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.aedev.flow.R
 import io.github.aedev.flow.data.local.BackupRepository
+import io.github.aedev.flow.data.local.OpmlSubscriptionImporter
 import io.github.aedev.flow.notification.NotificationHelper
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -69,6 +70,7 @@ class ImportViewModel
         }
 
         private val backupRepo = BackupRepository(context)
+        private val opmlImporter = OpmlSubscriptionImporter(context)
 
         private val _state = MutableStateFlow<State>(State.Idle)
         val state: StateFlow<State> = _state.asStateFlow()
@@ -101,6 +103,19 @@ class ImportViewModel
                 } finally {
                     NotificationHelper.cancelImportNotification(context)
                 }
+            }
+        }
+
+        fun importOpmlSubscriptions(uri: Uri) {
+            if (isRunning) return
+            val label = context.getString(R.string.import_subscriptions_xml_title)
+            viewModelScope.launch {
+                startProgress(label, 0, 0)
+                val result =
+                    opmlImporter.import(uri) { current, total ->
+                        updateProgress(label, current, total)
+                    }
+                handleResult(label, result)
             }
         }
 
