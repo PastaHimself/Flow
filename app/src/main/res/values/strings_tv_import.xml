@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="import_subscriptions_xml_title">Import subscriptions XML/OPML</string>
+    <string name="import_subscriptions_xml_desc">Import YouTube subscriptions from an OPML or XML feed export.</string>
+</resources>
