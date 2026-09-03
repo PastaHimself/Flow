@@ -100,32 +100,32 @@ fun TvImportDataScreen(
                     label = stringResource(R.string.import_flow_backup_item_title),
                     supportingText = stringResource(R.string.import_flow_backup_desc),
                     selected = false,
-                    onClick = { flowBackupLauncher.launch(JSON_MIME_TYPES) },
+                    onClick = { flowBackupLauncher.launch(jsonMimeTypes) },
                     modifier = Modifier.tvInitialFocus(),
                 )
                 TvSelectionRow(
                     label = stringResource(R.string.import_master_backup_title),
                     supportingText = stringResource(R.string.import_master_backup_desc),
                     selected = false,
-                    onClick = { masterBackupLauncher.launch(ZIP_MIME_TYPES) },
+                    onClick = { masterBackupLauncher.launch(zipMimeTypes) },
                 )
                 TvSelectionRow(
                     label = stringResource(R.string.import_from_newpipe),
                     supportingText = stringResource(R.string.import_from_newpipe_desc),
                     selected = false,
-                    onClick = { newPipeLauncher.launch(JSON_MIME_TYPES) },
+                    onClick = { newPipeLauncher.launch(jsonMimeTypes) },
                 )
                 TvSelectionRow(
                     label = stringResource(R.string.import_from_libretube),
                     supportingText = stringResource(R.string.import_from_libretube_desc),
                     selected = false,
-                    onClick = { libreTubeLauncher.launch(JSON_MIME_TYPES) },
+                    onClick = { libreTubeLauncher.launch(jsonMimeTypes) },
                 )
                 TvSelectionRow(
                     label = stringResource(R.string.import_yt_takeout_all),
                     supportingText = stringResource(R.string.import_yt_takeout_all_desc),
                     selected = false,
-                    onClick = { takeoutLauncher.launch(ZIP_MIME_TYPES) },
+                    onClick = { takeoutLauncher.launch(zipMimeTypes) },
                 )
             }
         }
@@ -186,5 +186,17 @@ private fun ImportStatus(
     }
 }
 
-private val JSON_MIME_TYPES = arrayOf("application/json", "text/json", "text/plain", "application/octet-stream")
-private val ZIP_MIME_TYPES = arrayOf("application/zip", "application/x-zip-compressed", "application/octet-stream")
+private val jsonMimeTypes =
+    arrayOf(
+        "application/json",
+        "text/json",
+        "text/plain",
+        "application/octet-stream",
+    )
+
+private val zipMimeTypes =
+    arrayOf(
+        "application/zip",
+        "application/x-zip-compressed",
+        "application/octet-stream",
+    )
