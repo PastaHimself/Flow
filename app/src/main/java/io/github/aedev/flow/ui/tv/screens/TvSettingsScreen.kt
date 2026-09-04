@@ -49,7 +49,6 @@ fun TvSettingsScreen(
     modifier: Modifier = Modifier,
     onOpenSync: () -> Unit = {},
     onOpenRemoteGuide: () -> Unit = {},
-    onOpenImportData: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val playerPreferences = remember { PlayerPreferences(context.applicationContext) }
@@ -63,18 +62,16 @@ fun TvSettingsScreen(
         modifier = modifier,
     ) {
         Row(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = dimens.overscanHorizontal),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = dimens.overscanHorizontal),
             horizontalArrangement = Arrangement.spacedBy(32.dp),
         ) {
             Column(
-                modifier =
-                    Modifier
-                        .width(300.dp)
-                        .verticalScroll(rememberScrollState())
-                        .focusGroup(),
+                modifier = Modifier
+                    .width(300.dp)
+                    .verticalScroll(rememberScrollState())
+                    .focusGroup(),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 TvSettingsCategory.entries.forEach { category ->
@@ -85,16 +82,13 @@ fun TvSettingsScreen(
                             when (category) {
                                 TvSettingsCategory.SYNC -> onOpenSync()
                                 TvSettingsCategory.REMOTE_GUIDE -> onOpenRemoteGuide()
-                                TvSettingsCategory.IMPORT_DATA -> onOpenImportData()
                                 else -> selectedCategory = category
                             }
                         },
                         onFocused = {
                             // Route categories need an explicit click; panes follow focus.
-                            if (
-                                category != TvSettingsCategory.SYNC &&
-                                category != TvSettingsCategory.REMOTE_GUIDE &&
-                                category != TvSettingsCategory.IMPORT_DATA
+                            if (category != TvSettingsCategory.SYNC &&
+                                category != TvSettingsCategory.REMOTE_GUIDE
                             ) {
                                 selectedCategory = category
                             }
@@ -106,21 +100,13 @@ fun TvSettingsScreen(
             androidx.compose.foundation.layout.Box(modifier = Modifier.weight(1f)) {
                 when (selectedCategory) {
                     TvSettingsCategory.PLAYBACK -> TvPlaybackSettingsPane(playerPreferences)
-
                     TvSettingsCategory.QUALITY -> TvQualitySettingsPane(playerPreferences)
-
                     TvSettingsCategory.CONTENT -> TvContentSettingsPane(playerPreferences)
-
                     TvSettingsCategory.APPEARANCE -> TvAppearanceSettingsPane(localDataManager)
-
                     TvSettingsCategory.FLOW_ENGINE -> TvFlowEngineSettingsPane(playerPreferences)
-
                     TvSettingsCategory.INTERFACE -> TvInterfaceSettingsPane(modePreferences)
-
                     TvSettingsCategory.ABOUT -> TvAboutSettingsPane()
-
                     TvSettingsCategory.REMOTE_GUIDE,
-                    TvSettingsCategory.IMPORT_DATA,
                     TvSettingsCategory.SYNC,
                     -> Unit
                 }
@@ -140,29 +126,25 @@ private fun TvSettingsCategoryItem(
 
     Surface(
         onClick = onClick,
-        modifier =
-            Modifier.onFocusChanged { state ->
-                focused = state.isFocused
-                if (state.isFocused) onFocused()
-            },
+        modifier = Modifier.onFocusChanged { state ->
+            focused = state.isFocused
+            if (state.isFocused) onFocused()
+        },
         shape = MaterialTheme.shapes.medium,
-        color =
-            when {
-                focused -> MaterialTheme.colorScheme.inverseSurface
-                selected -> MaterialTheme.colorScheme.secondaryContainer
-                else -> MaterialTheme.colorScheme.surfaceContainer
-            },
-        contentColor =
-            when {
-                focused -> MaterialTheme.colorScheme.inverseOnSurface
-                selected -> MaterialTheme.colorScheme.onSecondaryContainer
-                else -> MaterialTheme.colorScheme.onSurface
-            },
+        color = when {
+            focused -> MaterialTheme.colorScheme.inverseSurface
+            selected -> MaterialTheme.colorScheme.secondaryContainer
+            else -> MaterialTheme.colorScheme.surfaceContainer
+        },
+        contentColor = when {
+            focused -> MaterialTheme.colorScheme.inverseOnSurface
+            selected -> MaterialTheme.colorScheme.onSecondaryContainer
+            else -> MaterialTheme.colorScheme.onSurface
+        },
     ) {
         Row(
-            modifier =
-                Modifier
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 14.dp),
             horizontalArrangement = Arrangement.spacedBy(14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
