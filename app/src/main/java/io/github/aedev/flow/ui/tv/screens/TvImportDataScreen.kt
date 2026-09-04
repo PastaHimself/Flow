@@ -189,7 +189,7 @@ private fun ImportStatus(
                 horizontalAlignment = Alignment.Start,
             ) {
                 Text(
-                    text = stringResource(R.string.import_failed_template, state.message),
+                    text = stringResource(R.string.import_failed_template, localizedImportErrorMessage(state.message)),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.error,
                 )
@@ -198,6 +198,16 @@ private fun ImportStatus(
         }
     }
 }
+
+@Composable
+private fun localizedImportErrorMessage(message: String): String =
+    when (message) {
+        "no_entries" -> stringResource(R.string.import_no_history_entries)
+        "no_videos" -> stringResource(R.string.import_no_videos)
+        "no_content" -> stringResource(R.string.import_no_content)
+        "invalid_format" -> stringResource(R.string.import_invalid_format)
+        else -> message
+    }
 
 private val jsonMimeTypes =
     arrayOf(
