@@ -1,101 +1,118 @@
 package io.github.aedev.flow.data.local
 
+import org.w3c.dom.Element
+import org.w3c.dom.Node
+import org.xml.sax.InputSource
+import java.io.StringReader
+import java.net.URI
+import java.net.URLDecoder
+import javax.xml.XMLConstants
+import javax.xml.parsers.DocumentBuilderFactory
+
 internal data class OpmlSubscriptionEntry(
     val channelId: String,
     val channelName: String,
 )
 
-/** Lightweight OPML reader for YouTube subscription exports. */
+/** XML-backed OPML reader for YouTube subscription exports. */
 internal object OpmlSubscriptionParser {
-    private val outlineRegex =
-        Regex(
-            pattern = """<outline\b([^>]*)/?>""",
-            options = setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL),
-        )
-    private val attributeRegex =
-        Regex(
-            pattern = """([A-Za-z_:][A-Za-z0-9_:.-]*)\s*=\s*([\"'])(.*?)\2""",
-            options = setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL),
-        )
     private val youtubeChannelIdRegex = Regex("""UC[0-9A-Za-z_-]{22}""")
-    private val decimalEntityRegex = Regex("""&#(\d+);""")
-    private val hexEntityRegex = Regex("""&#x([0-9A-Fa-f]+);""")
 
     fun parse(xml: String): List<OpmlSubscriptionEntry> {
         if (!xml.trimStart().startsWith("<")) return emptyList()
 
+        val document =
+            runCatching {
+                val factory = DocumentBuilderFactory.newInstance()
+                runCatching { factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true) }
+                runCatching { factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true) }
+                runCatching { factory.setFeature("http://xml.org/sax/features/external-general-entities", false) }
+                runCatching { factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false) }
+                runCatching { factory.isXIncludeAware = false }
+                runCatching { factory.isExpandEntityReferences = false }
+
+                factory
+                    .newDocumentBuilder()
+                    .apply {
+                        setEntityResolver { _, _ -> InputSource(StringReader("")) }
+                    }.parse(InputSource(StringReader(xml)))
+            }.getOrNull() ?: return emptyList()
+
         val seen = LinkedHashSet<String>()
-        return outlineRegex
-            .findAll(xml)
-            .mapNotNull { match ->
-                val attributes = parseAttributes(match.groupValues[1])
-                val channelId = extractChannelId(attributes) ?: return@mapNotNull null
-                if (!seen.add(channelId)) return@mapNotNull null
+        val entries = mutableListOf<OpmlSubscriptionEntry>()
 
-                val channelName =
-                    sequenceOf("title", "text")
-                        .mapNotNull(attributes::get)
-                        .map(::decodeXml)
-                        .map(String::trim)
-                        .firstOrNull(String::isNotEmpty)
-                        ?: channelId
-
-                OpmlSubscriptionEntry(
-                    channelId = channelId,
-                    channelName = channelName,
-                )
-            }.toList()
-    }
-
-    private fun parseAttributes(raw: String): Map<String, String> =
-        attributeRegex
-            .findAll(raw)
-            .associate { match ->
-                match.groupValues[1].lowercase() to match.groupValues[3]
-            }
-
-    private fun extractChannelId(attributes: Map<String, String>): String? {
-        val preferredKeys =
-            listOf(
-                "channelid",
-                "channel_id",
-                "xmlurl",
-                "htmlurl",
-                "url",
-                "href",
-            )
-        val candidates =
-            buildList {
-                preferredKeys.mapNotNullTo(this) { attributes[it] }
-                attributes.values.forEach { value ->
-                    if (value !in this) add(value)
+        fun visit(node: Node) {
+            if (node is Element && node.tagName.equals("outline", ignoreCase = true)) {
+                val attributes = node.attributes.toAttributeMap()
+                val channelId = extractChannelId(attributes)
+                if (channelId != null && seen.add(channelId)) {
+                    val channelName =
+                        sequenceOf("title", "text")
+                            .mapNotNull(attributes::get)
+                            .map(String::trim)
+                            .firstOrNull(String::isNotEmpty)
+                            ?: channelId
+                    entries += OpmlSubscriptionEntry(channelId = channelId, channelName = channelName)
                 }
             }
 
-        return candidates
-            .asSequence()
-            .map(::decodeXml)
-            .mapNotNull { value -> youtubeChannelIdRegex.find(value)?.value }
+            val children = node.childNodes
+            for (index in 0 until children.length) {
+                visit(children.item(index))
+            }
+        }
+
+        document.documentElement?.let(::visit)
+        return entries
+    }
+
+    private fun org.w3c.dom.NamedNodeMap.toAttributeMap(): Map<String, String> =
+        buildMap {
+            for (index in 0 until length) {
+                val attribute = item(index)
+                put(attribute.nodeName.lowercase(), attribute.nodeValue.orEmpty())
+            }
+        }
+
+    private fun extractChannelId(attributes: Map<String, String>): String? {
+        sequenceOf("channelid", "channel_id")
+            .mapNotNull(attributes::get)
+            .map(String::trim)
+            .firstOrNull(youtubeChannelIdRegex::matches)
+            ?.let { return it }
+
+        return sequenceOf("xmlurl", "htmlurl", "url", "href")
+            .mapNotNull(attributes::get)
+            .mapNotNull(::extractChannelIdFromYouTubeUrl)
             .firstOrNull()
     }
 
-    private fun decodeXml(value: String): String =
-        value
-            .replace(hexEntityRegex) { match -> decodeCodePoint(match.groupValues[1], 16) }
-            .replace(decimalEntityRegex) { match -> decodeCodePoint(match.groupValues[1], 10) }
-            .replace("&quot;", "\"")
-            .replace("&apos;", "'")
-            .replace("&lt;", "<")
-            .replace("&gt;", ">")
-            .replace("&amp;", "&")
+    private fun extractChannelIdFromYouTubeUrl(rawUrl: String): String? {
+        val uri = runCatching { URI(rawUrl.trim()) }.getOrNull() ?: return null
+        if (uri.scheme?.lowercase() !in setOf("http", "https")) return null
 
-    private fun decodeCodePoint(
-        value: String,
-        radix: Int,
-    ): String =
-        value
-            .toIntOrNull(radix)
-            ?.takeIf(Character::isValidCodePoint)
-            ?.let { String(Character.toChars(it)) }
-            .orEmpty()
+        val host = uri.host?.lowercase() ?: return null
+        if (host != "youtube.com" && !host.endsWith(".youtube.com")) return null
+
+        val path = uri.path.orEmpty()
+        if (path.equals("/feeds/videos.xml", ignoreCase = true)) {
+            return uri.rawQuery
+                .orEmpty()
+                .split("&")
+                .asSequence()
+                .mapNotNull { part ->
+                    val key = part.substringBefore("=", missingDelimiterValue = part)
+                    if (!key.equals("channel_id", ignoreCase = true)) return@mapNotNull null
+                    URLDecoder.decode(part.substringAfter("=", ""), Charsets.UTF_8.name())
+                }.map(String::trim)
+                .firstOrNull(youtubeChannelIdRegex::matches)
+        }
+
+        val segments = path.split('/').filter(String::isNotBlank)
+        if (segments.size >= 2 && segments[0].equals("channel", ignoreCase = true)) {
+            return segments[1].trim().takeIf(youtubeChannelIdRegex::matches)
+        }
+
+        return null
+    }
 }
