@@ -18,7 +18,6 @@ import io.github.aedev.flow.ui.screens.subscriptions.SubscriptionsViewModel
 import io.github.aedev.flow.ui.tv.screens.TvArtistScreen
 import io.github.aedev.flow.ui.tv.screens.TvChannelScreen
 import io.github.aedev.flow.ui.tv.screens.TvHomeScreen
-import io.github.aedev.flow.ui.tv.screens.TvImportDataScreen
 import io.github.aedev.flow.ui.tv.screens.TvLibraryScreen
 import io.github.aedev.flow.ui.tv.screens.TvMusicCollectionScreen
 import io.github.aedev.flow.ui.tv.screens.TvMusicScreen
@@ -127,7 +126,6 @@ fun TvNavHost(
             TvSettingsScreen(
                 onOpenSync = { navController.navigate(TvRoutes.SYNC) },
                 onOpenRemoteGuide = { navController.navigate(TvRoutes.REMOTE_GUIDE) },
-                onOpenImportData = { navController.navigate(TvRoutes.IMPORT_DATA) },
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -137,24 +135,18 @@ fun TvNavHost(
         composable(TvRoutes.REMOTE_GUIDE) {
             TvRemoteGuideScreen(onNavigateBack = { navController.popBackStack() })
         }
-        composable(TvRoutes.IMPORT_DATA) {
-            TvImportDataScreen(onNavigateBack = { navController.popBackStack() })
-        }
         composable(
             route = TvRoutes.CHANNEL,
-            arguments =
-                listOf(
-                    navArgument(TvRoutes.CHANNEL_ARG) {
-                        type = NavType.StringType
-                        defaultValue = ""
-                    },
-                ),
+            arguments = listOf(
+                navArgument(TvRoutes.CHANNEL_ARG) {
+                    type = NavType.StringType
+                    defaultValue = ""
+                },
+            ),
         ) { entry ->
-            val channelRef =
-                entry.arguments
-                    ?.getString(TvRoutes.CHANNEL_ARG)
-                    ?.let { java.net.URLDecoder.decode(it, "UTF-8") }
-                    .orEmpty()
+            val channelRef = entry.arguments?.getString(TvRoutes.CHANNEL_ARG)
+                ?.let { java.net.URLDecoder.decode(it, "UTF-8") }
+                .orEmpty()
             TvChannelScreen(
                 channelUrl = channelRef,
                 onVideoClick = onPlayVideo,
