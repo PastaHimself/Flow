@@ -2,4 +2,6 @@
 <resources>
     <string name="import_subscriptions_xml_title">Import subscriptions XML/OPML</string>
     <string name="import_subscriptions_xml_desc">Import YouTube subscriptions from an OPML or XML feed export.</string>
+    <string name="import_subscriptions_xml_read_error">Could not read the selected XML/OPML file.</string>
+    <string name="import_subscriptions_xml_no_entries">No YouTube subscriptions were found in this XML/OPML file.</string>
 </resources>
