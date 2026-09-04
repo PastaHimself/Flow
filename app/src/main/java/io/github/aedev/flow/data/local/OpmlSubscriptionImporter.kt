@@ -6,7 +6,15 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.aedev.flow.data.recommendation.FlowNeuroEngine
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
+import org.schabi.newpipe.extractor.ServiceList
+import org.schabi.newpipe.extractor.channel.ChannelInfo
+import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 
 internal sealed class OpmlImportException : Exception() {
@@ -41,16 +49,20 @@ class OpmlSubscriptionImporter
                         return@withContext Result.failure(OpmlImportException.NoSubscriptions)
                     }
 
-                    onProgress?.invoke(0, entries.size)
                     val existingIds = subscriptionRepository.getAllSubscriptionIds()
-                    val subscriptions =
+                    val missingSubscriptions =
                         buildMissingOpmlSubscriptions(
                             entries = entries,
                             existingIds = existingIds,
                             subscribedAt = System.currentTimeMillis(),
                         )
+                    val subscriptions =
+                        enrichOpmlSubscriptionAvatars(
+                            subscriptions = missingSubscriptions,
+                            avatarFetcher = ::fetchYoutubeChannelAvatar,
+                            onProgress = onProgress,
+                        )
                     subscriptionRepository.subscribeAll(subscriptions)
-                    onProgress?.invoke(entries.size, entries.size)
 
                     val channelNames = subscriptions.map(ChannelSubscription::channelName).filter(String::isNotBlank)
                     if (channelNames.isNotEmpty()) {
@@ -65,6 +77,15 @@ class OpmlSubscriptionImporter
                 } catch (e: Exception) {
                     Result.failure(e)
                 }
+            }
+
+        private fun fetchYoutubeChannelAvatar(channelId: String): String =
+            try {
+                val url = "https://www.youtube.com/channel/$channelId"
+                val info = ChannelInfo.getInfo(ServiceList.YouTube, url)
+                info.avatars.maxByOrNull { it.height }?.url ?: ""
+            } catch (e: Exception) {
+                ""
             }
     }
 
@@ -83,3 +104,33 @@ internal fun buildMissingOpmlSubscriptions(
                 subscribedAt = subscribedAt - index,
             )
         }
+
+internal suspend fun enrichOpmlSubscriptionAvatars(
+    subscriptions: List<ChannelSubscription>,
+    avatarFetcher: suspend (String) -> String,
+    onProgress: ((current: Int, total: Int) -> Unit)? = null,
+): List<ChannelSubscription> {
+    if (subscriptions.isEmpty()) {
+        onProgress?.invoke(0, 0)
+        return emptyList()
+    }
+
+    val semaphore = Semaphore(5)
+    val completed = AtomicInteger(0)
+    onProgress?.invoke(0, subscriptions.size)
+
+    return supervisorScope {
+        subscriptions
+            .map { subscription ->
+                async(Dispatchers.IO) {
+                    val enriched =
+                        semaphore.withPermit {
+                            val avatar = runCatching { avatarFetcher(subscription.channelId) }.getOrDefault("")
+                            if (avatar.isBlank()) subscription else subscription.copy(channelThumbnail = avatar)
+                        }
+                    onProgress?.invoke(completed.incrementAndGet(), subscriptions.size)
+                    enriched
+                }
+            }.awaitAll()
+    }
+}
