@@ -106,6 +106,27 @@ class OpmlSubscriptionParserTest {
     }
 
     @Test
+    fun `skips malformed feed query and keeps valid outlines`() {
+        val xml =
+            """
+            <opml>
+              <body>
+                <outline text="Malformed" xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=%ZZ" />
+                <outline text="Valid" xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UC1234567890123456789012" />
+              </body>
+            </opml>
+            """.trimIndent()
+
+        assertThat(OpmlSubscriptionParser.parse(xml))
+            .containsExactly(
+                OpmlSubscriptionEntry(
+                    channelId = "UC1234567890123456789012",
+                    channelName = "Valid",
+                ),
+            )
+    }
+
+    @Test
     fun `rejects non xml input`() {
         assertThat(OpmlSubscriptionParser.parse("channel,name\nUC123,Example")).isEmpty()
     }
