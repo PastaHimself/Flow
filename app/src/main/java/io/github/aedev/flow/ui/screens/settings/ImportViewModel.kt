@@ -19,6 +19,19 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+private val KNOWN_IMPORT_ERROR_CODES =
+    setOf(
+        "no_entries",
+        "no_videos",
+        "no_content",
+        "invalid_format",
+    )
+
+internal fun safeImportErrorMessage(
+    rawMessage: String?,
+    fallback: String,
+): String = rawMessage?.takeIf(KNOWN_IMPORT_ERROR_CODES::contains) ?: fallback
+
 /**
  * Activity-scoped ViewModel for all data-import operations.
  *
@@ -42,13 +55,6 @@ class ImportViewModel
     ) : ViewModel() {
         companion object {
             private const val TAG = "ImportViewModel"
-            private val KNOWN_IMPORT_ERROR_CODES =
-                setOf(
-                    "no_entries",
-                    "no_videos",
-                    "no_content",
-                    "invalid_format",
-                )
         }
 
         init {
@@ -120,7 +126,7 @@ class ImportViewModel
 
         fun importOpmlSubscriptions(uri: Uri) {
             if (isRunning) return
-            val label = context.getString(R.string.import_from_youtube)
+            val label = context.getString(R.string.import_label_youtube_subscriptions)
             viewModelScope.launch {
                 startProgress(label, 0, 0)
                 val result =
@@ -378,10 +384,10 @@ class ImportViewModel
                 Log.e(TAG, "Import failed: $label", error)
             }
             val message =
-                error
-                    ?.message
-                    ?.takeIf(KNOWN_IMPORT_ERROR_CODES::contains)
-                    ?: context.getString(R.string.unknown_error)
+                safeImportErrorMessage(
+                    rawMessage = error?.message,
+                    fallback = context.getString(R.string.unknown_error),
+                )
             _state.value = State.Error(label, message)
         }
     }
