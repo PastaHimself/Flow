@@ -71,4 +71,30 @@ class OpmlSubscriptionParserTest {
     fun `rejects non xml input`() {
         assertThat(OpmlSubscriptionParser.parse("channel,name\nUC123,Example")).isEmpty()
     }
+
+    @Test
+    fun `builds subscriptions only for channel ids that are not already followed`() {
+        val existingId = "UC1234567890123456789012"
+        val newId = "UCabcdefghijklmnopqrstuv"
+        val subscriptions =
+            buildMissingOpmlSubscriptions(
+                entries =
+                    listOf(
+                        OpmlSubscriptionEntry(existingId, "Existing channel"),
+                        OpmlSubscriptionEntry(newId, "New channel"),
+                    ),
+                existingIds = setOf(existingId),
+                subscribedAt = 1_000L,
+            )
+
+        assertThat(subscriptions)
+            .containsExactly(
+                ChannelSubscription(
+                    channelId = newId,
+                    channelName = "New channel",
+                    channelThumbnail = "",
+                    subscribedAt = 1_000L,
+                ),
+            )
+    }
 }
