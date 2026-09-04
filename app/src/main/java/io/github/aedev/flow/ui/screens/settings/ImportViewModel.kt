@@ -8,6 +8,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.aedev.flow.R
 import io.github.aedev.flow.data.local.BackupRepository
+import io.github.aedev.flow.data.local.OpmlImportException
 import io.github.aedev.flow.data.local.OpmlSubscriptionImporter
 import io.github.aedev.flow.notification.NotificationHelper
 import kotlinx.coroutines.CancellationException
@@ -36,6 +37,7 @@ class ImportViewModel
     @Inject
     constructor(
         @ApplicationContext private val context: Context,
+        private val opmlImporter: OpmlSubscriptionImporter,
     ) : ViewModel() {
         init {
             NotificationHelper.cancelImportNotification(context)
@@ -70,7 +72,6 @@ class ImportViewModel
         }
 
         private val backupRepo = BackupRepository(context)
-        private val opmlImporter = OpmlSubscriptionImporter(context)
 
         private val _state = MutableStateFlow<State>(State.Idle)
         val state: StateFlow<State> = _state.asStateFlow()
@@ -115,7 +116,7 @@ class ImportViewModel
                     opmlImporter.import(uri) { current, total ->
                         updateProgress(label, current, total)
                     }
-                handleResult(label, result)
+                handleOpmlResult(label, result)
             }
         }
 
@@ -311,6 +312,27 @@ class ImportViewModel
                 val result = backupRepo.importYouTubeWatchHistory(uri)
                 handleResult(label, result)
             }
+        }
+
+        private fun handleOpmlResult(
+            label: String,
+            result: Result<Int>,
+        ) {
+            if (result.isSuccess) {
+                handleResult(label, result)
+                return
+            }
+
+            NotificationHelper.cancelImportNotification(context)
+            val message =
+                when (result.exceptionOrNull()) {
+                    OpmlImportException.UnreadableFile ->
+                        context.getString(R.string.import_subscriptions_xml_read_error)
+                    OpmlImportException.NoSubscriptions ->
+                        context.getString(R.string.import_subscriptions_xml_no_entries)
+                    else -> context.getString(R.string.unknown_error)
+                }
+            _state.value = State.Error(label, message)
         }
 
         private fun handleResult(
