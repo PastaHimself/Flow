@@ -12,8 +12,6 @@ import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
-import org.schabi.newpipe.extractor.ServiceList
-import org.schabi.newpipe.extractor.channel.ChannelInfo
 import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 
@@ -59,7 +57,7 @@ class OpmlSubscriptionImporter
                     val subscriptions =
                         enrichOpmlSubscriptionAvatars(
                             subscriptions = missingSubscriptions,
-                            avatarFetcher = ::fetchYoutubeChannelAvatar,
+                            avatarFetcher = ::fetchYouTubeChannelAvatar,
                             onProgress = onProgress,
                         )
                     subscriptionRepository.subscribeAll(subscriptions)
@@ -77,15 +75,6 @@ class OpmlSubscriptionImporter
                 } catch (e: Exception) {
                     Result.failure(e)
                 }
-            }
-
-        private fun fetchYoutubeChannelAvatar(channelId: String): String =
-            try {
-                val url = "https://www.youtube.com/channel/$channelId"
-                val info = ChannelInfo.getInfo(ServiceList.YouTube, url)
-                info.avatars.maxByOrNull { it.height }?.url ?: ""
-            } catch (e: Exception) {
-                ""
             }
     }
 
