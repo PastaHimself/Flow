@@ -126,7 +126,7 @@ class ImportViewModel
 
         fun importOpmlSubscriptions(uri: Uri) {
             if (isRunning) return
-            val label = context.getString(R.string.import_label_youtube_subscriptions)
+            val label = context.getString(R.string.import_subscriptions_xml_title)
             viewModelScope.launch {
                 startProgress(label, 0, 0)
                 val result =
@@ -346,11 +346,11 @@ class ImportViewModel
             val message =
                 when (error) {
                     OpmlImportException.UnreadableFile -> {
-                        context.getString(R.string.import_invalid_format)
+                        context.getString(R.string.import_subscriptions_xml_read_error)
                     }
 
                     OpmlImportException.NoSubscriptions -> {
-                        context.getString(R.string.import_no_content)
+                        context.getString(R.string.import_subscriptions_xml_no_entries)
                     }
 
                     else -> {
