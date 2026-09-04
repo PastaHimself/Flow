@@ -30,8 +30,6 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import org.schabi.newpipe.extractor.NewPipe
-import org.schabi.newpipe.extractor.ServiceList
-import org.schabi.newpipe.extractor.channel.ChannelInfo
 import java.io.BufferedReader
 import java.io.ByteArrayOutputStream
 import java.io.InputStreamReader
@@ -2281,18 +2279,5 @@ class BackupRepository(
             }
         }
 
-    // Helper to fetch channel avatar using NewPipe
-    private fun fetchChannelAvatar(channelId: String): String =
-        try {
-            val url =
-                if (channelId.startsWith("UC") && channelId.length > 20) {
-                    "https://www.youtube.com/channel/$channelId"
-                } else {
-                    "https://www.youtube.com/@$channelId"
-                }
-            val info = ChannelInfo.getInfo(ServiceList.YouTube, url)
-            info.avatars.maxByOrNull { it.height }?.url ?: ""
-        } catch (e: Exception) {
-            ""
-        }
+    private fun fetchChannelAvatar(channelId: String): String = fetchYouTubeChannelAvatar(channelId)
 }
