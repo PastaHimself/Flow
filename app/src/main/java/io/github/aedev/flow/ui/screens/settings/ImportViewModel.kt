@@ -326,11 +326,17 @@ class ImportViewModel
             NotificationHelper.cancelImportNotification(context)
             val message =
                 when (result.exceptionOrNull()) {
-                    OpmlImportException.UnreadableFile ->
+                    OpmlImportException.UnreadableFile -> {
                         context.getString(R.string.import_subscriptions_xml_read_error)
-                    OpmlImportException.NoSubscriptions ->
+                    }
+
+                    OpmlImportException.NoSubscriptions -> {
                         context.getString(R.string.import_subscriptions_xml_no_entries)
-                    else -> context.getString(R.string.unknown_error)
+                    }
+
+                    else -> {
+                        context.getString(R.string.unknown_error)
+                    }
                 }
             _state.value = State.Error(label, message)
         }
