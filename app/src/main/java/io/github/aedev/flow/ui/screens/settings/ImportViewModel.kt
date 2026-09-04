@@ -42,6 +42,13 @@ class ImportViewModel
     ) : ViewModel() {
         companion object {
             private const val TAG = "ImportViewModel"
+            private val KNOWN_IMPORT_ERROR_CODES =
+                setOf(
+                    "no_entries",
+                    "no_videos",
+                    "no_content",
+                    "invalid_format",
+                )
         }
 
         init {
@@ -370,6 +377,11 @@ class ImportViewModel
             if (error != null) {
                 Log.e(TAG, "Import failed: $label", error)
             }
-            _state.value = State.Error(label, context.getString(R.string.import_file_failed_generic))
+            val message =
+                error
+                    ?.message
+                    ?.takeIf(KNOWN_IMPORT_ERROR_CODES::contains)
+                    ?: context.getString(R.string.import_file_failed_generic)
+            _state.value = State.Error(label, message)
         }
     }
