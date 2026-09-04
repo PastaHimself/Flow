@@ -103,7 +103,9 @@ internal object OpmlSubscriptionParser {
                 .mapNotNull { part ->
                     val key = part.substringBefore("=", missingDelimiterValue = part)
                     if (!key.equals("channel_id", ignoreCase = true)) return@mapNotNull null
-                    URLDecoder.decode(part.substringAfter("=", ""), Charsets.UTF_8.name())
+                    runCatching {
+                        URLDecoder.decode(part.substringAfter("=", ""), Charsets.UTF_8.name())
+                    }.getOrNull()
                 }.map(String::trim)
                 .firstOrNull(youtubeChannelIdRegex::matches)
         }
