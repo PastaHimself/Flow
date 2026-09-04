@@ -2,6 +2,7 @@ package io.github.aedev.flow.ui.screens.settings
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -39,6 +40,10 @@ class ImportViewModel
         @ApplicationContext private val context: Context,
         private val opmlImporter: OpmlSubscriptionImporter,
     ) : ViewModel() {
+        companion object {
+            private const val TAG = "ImportViewModel"
+        }
+
         init {
             NotificationHelper.cancelImportNotification(context)
         }
@@ -94,13 +99,12 @@ class ImportViewModel
                             NotificationHelper.showImportComplete(context, label, 0, successMessage)
                         }
                     } else {
-                        val msg = result.exceptionOrNull()?.message ?: context.getString(R.string.unknown_error)
-                        _state.value = State.Error(label, msg)
+                        setLocalizedError(label, result.exceptionOrNull())
                     }
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    _state.value = State.Error(label, e.message ?: context.getString(R.string.unknown_error))
+                    setLocalizedError(label, e)
                 } finally {
                     NotificationHelper.cancelImportNotification(context)
                 }
@@ -233,13 +237,12 @@ class ImportViewModel
                             NotificationHelper.showImportComplete(context, label, 0, summary)
                         }
                     } else {
-                        val msg = result.exceptionOrNull()?.message ?: context.getString(R.string.unknown_error)
-                        _state.value = State.Error(label, msg)
+                        setLocalizedError(label, result.exceptionOrNull())
                     }
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    _state.value = State.Error(label, e.message ?: context.getString(R.string.unknown_error))
+                    setLocalizedError(label, e)
                 } finally {
                     NotificationHelper.cancelImportNotification(context)
                 }
@@ -260,13 +263,12 @@ class ImportViewModel
                             NotificationHelper.showImportComplete(context, label, 0, successMessage)
                         }
                     } else {
-                        val msg = result.exceptionOrNull()?.message ?: context.getString(R.string.unknown_error)
-                        _state.value = State.Error(label, msg)
+                        setLocalizedError(label, result.exceptionOrNull())
                     }
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    _state.value = State.Error(label, e.message ?: context.getString(R.string.unknown_error))
+                    setLocalizedError(label, e)
                 } finally {
                     NotificationHelper.cancelImportNotification(context)
                 }
@@ -324,8 +326,12 @@ class ImportViewModel
             }
 
             NotificationHelper.cancelImportNotification(context)
+            val error = result.exceptionOrNull()
+            if (error != null) {
+                Log.e(TAG, "OPML import failed: $label", error)
+            }
             val message =
-                when (result.exceptionOrNull()) {
+                when (error) {
                     OpmlImportException.UnreadableFile -> {
                         context.getString(R.string.import_subscriptions_xml_read_error)
                     }
@@ -335,7 +341,7 @@ class ImportViewModel
                     }
 
                     else -> {
-                        context.getString(R.string.unknown_error)
+                        context.getString(R.string.import_file_failed_generic)
                     }
                 }
             _state.value = State.Error(label, message)
@@ -353,8 +359,17 @@ class ImportViewModel
                     NotificationHelper.showImportComplete(context, label, count)
                 }
             } else {
-                val msg = result.exceptionOrNull()?.message ?: context.getString(R.string.unknown_error)
-                _state.value = State.Error(label, msg)
+                setLocalizedError(label, result.exceptionOrNull())
             }
+        }
+
+        private fun setLocalizedError(
+            label: String,
+            error: Throwable?,
+        ) {
+            if (error != null) {
+                Log.e(TAG, "Import failed: $label", error)
+            }
+            _state.value = State.Error(label, context.getString(R.string.import_file_failed_generic))
         }
     }
