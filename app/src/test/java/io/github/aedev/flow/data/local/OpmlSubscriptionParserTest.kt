@@ -1,6 +1,7 @@
 package io.github.aedev.flow.data.local
 
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.runBlocking
 import org.junit.Test
 
 class OpmlSubscriptionParserTest {
@@ -52,6 +53,26 @@ class OpmlSubscriptionParserTest {
     }
 
     @Test
+    fun `accepts an explicit canonical channel id attribute`() {
+        val xml =
+            """
+            <opml>
+              <body>
+                <outline text="Direct channel" channelId="UC1234567890123456789012" />
+              </body>
+            </opml>
+            """.trimIndent()
+
+        assertThat(OpmlSubscriptionParser.parse(xml))
+            .containsExactly(
+                OpmlSubscriptionEntry(
+                    channelId = "UC1234567890123456789012",
+                    channelName = "Direct channel",
+                ),
+            )
+    }
+
+    @Test
     fun `ignores outlines without a canonical YouTube channel id`() {
         val xml =
             """
@@ -60,6 +81,23 @@ class OpmlSubscriptionParserTest {
                 <outline text="Folder">
                   <outline text="Generic RSS" xmlUrl="https://example.com/feed.xml" />
                 </outline>
+              </body>
+            </opml>
+            """.trimIndent()
+
+        assertThat(OpmlSubscriptionParser.parse(xml)).isEmpty()
+    }
+
+    @Test
+    fun `does not scan labels non YouTube URLs or comments for channel ids`() {
+        val xml =
+            """
+            <opml>
+              <body>
+                <outline
+                    text="UC1234567890123456789012"
+                    xmlUrl="https://example.com/feed.xml?channel_id=UC1234567890123456789012" />
+                <!-- <outline text="Commented" xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCabcdefghijklmnopqrstuv" /> -->
               </body>
             </opml>
             """.trimIndent()
@@ -97,4 +135,29 @@ class OpmlSubscriptionParserTest {
                 ),
             )
     }
+
+    @Test
+    fun `enriches new subscriptions with fetched channel avatars`() =
+        runBlocking {
+            val channelId = "UCabcdefghijklmnopqrstuv"
+            val progress = mutableListOf<Pair<Int, Int>>()
+            val subscriptions =
+                enrichOpmlSubscriptionAvatars(
+                    subscriptions =
+                        listOf(
+                            ChannelSubscription(
+                                channelId = channelId,
+                                channelName = "New channel",
+                                channelThumbnail = "",
+                                subscribedAt = 1_000L,
+                            ),
+                        ),
+                    avatarFetcher = { "https://yt3.ggpht.com/avatar-$it" },
+                    onProgress = { current, total -> progress += current to total },
+                )
+
+            assertThat(subscriptions.single().channelThumbnail)
+                .isEqualTo("https://yt3.ggpht.com/avatar-$channelId")
+            assertThat(progress).containsExactly(0 to 1, 1 to 1).inOrder()
+        }
 }
