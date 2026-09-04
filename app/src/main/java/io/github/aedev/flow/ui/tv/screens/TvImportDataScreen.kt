@@ -114,8 +114,8 @@ fun TvImportDataScreen(
                     onClick = { masterBackupLauncher.launch(zipMimeTypes) },
                 )
                 TvSelectionRow(
-                    label = stringResource(R.string.import_label_youtube_subscriptions),
-                    supportingText = stringResource(R.string.import_other_youtube_clients),
+                    label = stringResource(R.string.import_subscriptions_xml_title),
+                    supportingText = stringResource(R.string.import_subscriptions_xml_desc),
                     selected = false,
                     onClick = { opmlLauncher.launch(xmlMimeTypes) },
                 )
