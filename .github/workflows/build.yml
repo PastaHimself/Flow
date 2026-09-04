@@ -75,10 +75,13 @@ jobs:
             echo "Release keystore secret is not available. Continuing with an unsigned CI build."
           fi
 
+      # Keep the two debug flavors in separate Gradle invocations. Compiling
+      # both in one task graph lets Kotlin compile both variants concurrently
+      # and can exhaust the hosted runner's memory even without --parallel.
       - name: Run unit tests
-        run: >
-          ./gradlew :app:testGithubDebugUnitTest :app:testFossDebugUnitTest
-          --parallel --build-cache --stacktrace
+        run: |
+          ./gradlew :app:testGithubDebugUnitTest --build-cache --stacktrace
+          ./gradlew :app:testFossDebugUnitTest --build-cache --stacktrace
 
       # Instrumentation tests are not executed in CI, but they must still
       # compile: breakage here otherwise lands on main unnoticed.
