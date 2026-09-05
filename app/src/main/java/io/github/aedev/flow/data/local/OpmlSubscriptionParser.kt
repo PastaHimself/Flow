@@ -30,9 +30,12 @@ internal object OpmlSubscriptionParser {
                 runCatching { factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false) }
                 runCatching { factory.isXIncludeAware = false }
                 runCatching { factory.isExpandEntityReferences = false }
-                factory.newDocumentBuilder().apply {
-                    setEntityResolver { _, _ -> InputSource(StringReader("")) }
-                }.parse(InputSource(StringReader(xml)))
+
+                factory
+                    .newDocumentBuilder()
+                    .apply {
+                        setEntityResolver { _, _ -> InputSource(StringReader("")) }
+                    }.parse(InputSource(StringReader(xml)))
             }.getOrNull() ?: return emptyList()
 
         val seen = LinkedHashSet<String>()
@@ -49,11 +52,14 @@ internal object OpmlSubscriptionParser {
                             .map(String::trim)
                             .firstOrNull(String::isNotEmpty)
                             ?: channelId
-                    entries += OpmlSubscriptionEntry(channelId, channelName)
+                    entries += OpmlSubscriptionEntry(channelId = channelId, channelName = channelName)
                 }
             }
+
             val children = node.childNodes
-            for (index in 0 until children.length) visit(children.item(index))
+            for (index in 0 until children.length) {
+                visit(children.item(index))
+            }
         }
 
         document.documentElement?.let(::visit)
@@ -84,20 +90,23 @@ internal object OpmlSubscriptionParser {
     private fun extractChannelIdFromYouTubeUrl(rawUrl: String): String? {
         val uri = runCatching { URI(rawUrl.trim()) }.getOrNull() ?: return null
         if (uri.scheme?.lowercase() !in setOf("http", "https")) return null
+
         val host = uri.host?.lowercase() ?: return null
         if (host != "youtube.com" && !host.endsWith(".youtube.com")) return null
 
         val path = uri.path.orEmpty()
         if (path.equals("/feeds/videos.xml", ignoreCase = true)) {
-            return uri.rawQuery.orEmpty().split("&").asSequence()
+            return uri.rawQuery
+                .orEmpty()
+                .split("&")
+                .asSequence()
                 .mapNotNull { part ->
                     val key = part.substringBefore("=", missingDelimiterValue = part)
                     if (!key.equals("channel_id", ignoreCase = true)) return@mapNotNull null
                     runCatching {
                         URLDecoder.decode(part.substringAfter("=", ""), Charsets.UTF_8.name())
                     }.getOrNull()
-                }
-                .map(String::trim)
+                }.map(String::trim)
                 .firstOrNull(youtubeChannelIdRegex::matches)
         }
 
@@ -105,6 +114,7 @@ internal object OpmlSubscriptionParser {
         if (segments.size >= 2 && segments[0].equals("channel", ignoreCase = true)) {
             return segments[1].trim().takeIf(youtubeChannelIdRegex::matches)
         }
+
         return null
     }
 }

@@ -6,17 +6,19 @@ import java.io.File
 
 class TvFeedbackRegressionTest {
     @Test
-    fun uiModeChangesDoNotClearFocusBeforePersistence() {
+    fun `ui mode changes do not clear focus before persistence`() {
         val source = readMainSource("io/github/aedev/flow/ui/tv/screens/settings/TvSystemSettingsPanes.kt")
+
         assertThat(source).doesNotContain("clearFocus")
         assertThat(source).doesNotContain("withFrameNanos")
         assertThat(source).contains("modePreferences.setMode(mode)")
     }
 
     @Test
-    fun playerChannelActionRoutesToTvChannelDestination() {
+    fun `player channel action routes to the TV channel destination`() {
         val appSource = readMainSource("io/github/aedev/flow/ui/tv/FlowTvApp.kt")
         val overlaySource = readMainSource("io/github/aedev/flow/ui/tv/player/TvPlayerOverlay.kt")
+
         assertThat(appSource).contains("navController.navigate(TvRoutes.channel(channelRef))")
         assertThat(appSource).contains("LocalTvPlayerChannelAction provides")
         assertThat(overlaySource).contains("channelAction.onOpenChannel(channelRef)")
@@ -24,11 +26,12 @@ class TvFeedbackRegressionTest {
     }
 
     private fun readMainSource(relativePath: String): String {
-        val candidates = listOf(
-            File("src/main/java/$relativePath"),
-            File("app/src/main/java/$relativePath"),
-            File("../app/src/main/java/$relativePath"),
-        )
+        val candidates =
+            listOf(
+                File("src/main/java/$relativePath"),
+                File("app/src/main/java/$relativePath"),
+                File("../app/src/main/java/$relativePath"),
+            )
         val sourceFile = candidates.firstOrNull(File::isFile)
         checkNotNull(sourceFile) { "Could not locate production source: $relativePath" }
         return sourceFile.readText()

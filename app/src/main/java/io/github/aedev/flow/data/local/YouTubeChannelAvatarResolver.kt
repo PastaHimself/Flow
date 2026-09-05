@@ -11,8 +11,14 @@ internal fun buildYouTubeChannelUrl(channelId: String): String? {
         channelRef.startsWith("UC") && channelRef.length > 20 -> {
             "https://www.youtube.com/channel/$channelRef"
         }
-        channelRef.startsWith("@") -> "https://www.youtube.com/$channelRef"
-        else -> "https://www.youtube.com/@$channelRef"
+
+        channelRef.startsWith("@") -> {
+            "https://www.youtube.com/$channelRef"
+        }
+
+        else -> {
+            "https://www.youtube.com/@$channelRef"
+        }
     }
 }
 

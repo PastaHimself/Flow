@@ -17,6 +17,7 @@ import javax.inject.Inject
 
 internal sealed class OpmlImportException : Exception() {
     data object UnreadableFile : OpmlImportException()
+
     data object NoSubscriptions : OpmlImportException()
 }
 
@@ -35,25 +36,30 @@ class OpmlSubscriptionImporter
             withContext(Dispatchers.IO) {
                 try {
                     val xml =
-                        appContext.contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)
+                        appContext.contentResolver
+                            .openInputStream(uri)
+                            ?.bufferedReader(Charsets.UTF_8)
                             ?.use { it.readText() }
                             ?: return@withContext Result.failure(OpmlImportException.UnreadableFile)
+
                     val entries = OpmlSubscriptionParser.parse(xml)
                     if (entries.isEmpty()) {
                         return@withContext Result.failure(OpmlImportException.NoSubscriptions)
                     }
 
                     val existingIds = subscriptionRepository.getAllSubscriptionIds()
-                    val missingSubscriptions = buildMissingOpmlSubscriptions(
-                        entries = entries,
-                        existingIds = existingIds,
-                        subscribedAt = System.currentTimeMillis(),
-                    )
-                    val subscriptions = enrichOpmlSubscriptionAvatars(
-                        subscriptions = missingSubscriptions,
-                        avatarFetcher = ::fetchYouTubeChannelAvatar,
-                        onProgress = onProgress,
-                    )
+                    val missingSubscriptions =
+                        buildMissingOpmlSubscriptions(
+                            entries = entries,
+                            existingIds = existingIds,
+                            subscribedAt = System.currentTimeMillis(),
+                        )
+                    val subscriptions =
+                        enrichOpmlSubscriptionAvatars(
+                            subscriptions = missingSubscriptions,
+                            avatarFetcher = ::fetchYouTubeChannelAvatar,
+                            onProgress = onProgress,
+                        )
                     subscriptionRepository.subscribeAll(subscriptions)
 
                     val channelNames = subscriptions.map(ChannelSubscription::channelName).filter(String::isNotBlank)
@@ -62,6 +68,7 @@ class OpmlSubscriptionImporter
                             FlowNeuroEngine.bootstrapFromSubscriptions(appContext, channelNames)
                         }
                     }
+
                     Result.success(subscriptions.size)
                 } catch (e: CancellationException) {
                     throw e
@@ -76,14 +83,16 @@ internal fun buildMissingOpmlSubscriptions(
     existingIds: Set<String>,
     subscribedAt: Long,
 ): List<ChannelSubscription> =
-    entries.filterNot { it.channelId in existingIds }.mapIndexed { index, entry ->
-        ChannelSubscription(
-            channelId = entry.channelId,
-            channelName = entry.channelName,
-            channelThumbnail = "",
-            subscribedAt = subscribedAt - index,
-        )
-    }
+    entries
+        .filterNot { it.channelId in existingIds }
+        .mapIndexed { index, entry ->
+            ChannelSubscription(
+                channelId = entry.channelId,
+                channelName = entry.channelName,
+                channelThumbnail = "",
+                subscribedAt = subscribedAt - index,
+            )
+        }
 
 internal suspend fun enrichOpmlSubscriptionAvatars(
     subscriptions: List<ChannelSubscription>,
@@ -98,16 +107,19 @@ internal suspend fun enrichOpmlSubscriptionAvatars(
     val semaphore = Semaphore(5)
     val completed = AtomicInteger(0)
     onProgress?.invoke(0, subscriptions.size)
+
     return supervisorScope {
-        subscriptions.map { subscription ->
-            async(Dispatchers.IO) {
-                val enriched = semaphore.withPermit {
-                    val avatar = runCatching { avatarFetcher(subscription.channelId) }.getOrDefault("")
-                    if (avatar.isBlank()) subscription else subscription.copy(channelThumbnail = avatar)
+        subscriptions
+            .map { subscription ->
+                async(Dispatchers.IO) {
+                    val enriched =
+                        semaphore.withPermit {
+                            val avatar = runCatching { avatarFetcher(subscription.channelId) }.getOrDefault("")
+                            if (avatar.isBlank()) subscription else subscription.copy(channelThumbnail = avatar)
+                        }
+                    onProgress?.invoke(completed.incrementAndGet(), subscriptions.size)
+                    enriched
                 }
-                onProgress?.invoke(completed.incrementAndGet(), subscriptions.size)
-                enriched
-            }
-        }.awaitAll()
+            }.awaitAll()
     }
 }

@@ -34,6 +34,10 @@ import io.github.aedev.flow.ui.tv.components.TvSelectionRow
 import io.github.aedev.flow.ui.tv.focus.tvInitialFocus
 import io.github.aedev.flow.ui.tv.theme.LocalTvDimens
 
+/**
+ * TV-native entry point for file based restores. The system document picker keeps
+ * storage access permissionless and works with local, USB and document-provider files.
+ */
 @Composable
 fun TvImportDataScreen(
     onNavigateBack: () -> Unit,
@@ -83,13 +87,15 @@ fun TvImportDataScreen(
         },
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = dimens.overscanHorizontal)
-                .verticalScroll(rememberScrollState()),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = dimens.overscanHorizontal)
+                    .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             ImportStatus(state = state, onDismiss = viewModel::dismiss)
+
             Column(
                 modifier = Modifier.widthIn(max = 760.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -142,7 +148,10 @@ private fun ImportStatus(
     onDismiss: () -> Unit,
 ) {
     when (state) {
-        ImportViewModel.State.Idle -> Unit
+        ImportViewModel.State.Idle -> {
+            Unit
+        }
+
         is ImportViewModel.State.Running -> {
             Column(
                 modifier = Modifier.fillMaxWidth().widthIn(max = 760.dp),
@@ -159,8 +168,12 @@ private fun ImportStatus(
                 }
             }
         }
+
         is ImportViewModel.State.Success -> {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.Start) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalAlignment = Alignment.Start,
+            ) {
                 Text(
                     text = state.message ?: stringResource(R.string.import_success, state.label),
                     style = MaterialTheme.typography.bodyLarge,
@@ -169,8 +182,12 @@ private fun ImportStatus(
                 TvButton(text = stringResource(R.string.dismiss), onClick = onDismiss)
             }
         }
+
         is ImportViewModel.State.Error -> {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.Start) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalAlignment = Alignment.Start,
+            ) {
                 Text(
                     text = stringResource(R.string.import_failed_template, localizedImportErrorMessage(state.message)),
                     style = MaterialTheme.typography.bodyLarge,
@@ -192,6 +209,26 @@ private fun localizedImportErrorMessage(message: String): String =
         else -> message
     }
 
-private val jsonMimeTypes = arrayOf("application/json", "text/json", "text/plain", "application/octet-stream")
-private val xmlMimeTypes = arrayOf("application/xml", "text/xml", "application/rss+xml", "text/plain", "application/octet-stream")
-private val zipMimeTypes = arrayOf("application/zip", "application/x-zip-compressed", "application/octet-stream")
+private val jsonMimeTypes =
+    arrayOf(
+        "application/json",
+        "text/json",
+        "text/plain",
+        "application/octet-stream",
+    )
+
+private val xmlMimeTypes =
+    arrayOf(
+        "application/xml",
+        "text/xml",
+        "application/rss+xml",
+        "text/plain",
+        "application/octet-stream",
+    )
+
+private val zipMimeTypes =
+    arrayOf(
+        "application/zip",
+        "application/x-zip-compressed",
+        "application/octet-stream",
+    )

@@ -5,7 +5,7 @@ import org.junit.Test
 
 class YouTubeChannelAvatarResolverTest {
     @Test
-    fun buildsCanonicalAndHandleUrls() {
+    fun `builds channel url for canonical id and handle`() {
         assertThat(buildYouTubeChannelUrl("UC1234567890123456789012"))
             .isEqualTo("https://www.youtube.com/channel/UC1234567890123456789012")
         assertThat(buildYouTubeChannelUrl("creator"))
@@ -15,7 +15,7 @@ class YouTubeChannelAvatarResolverTest {
     }
 
     @Test
-    fun rejectsBlankReferences() {
+    fun `rejects blank channel reference`() {
         assertThat(buildYouTubeChannelUrl("   ")).isNull()
     }
 }
