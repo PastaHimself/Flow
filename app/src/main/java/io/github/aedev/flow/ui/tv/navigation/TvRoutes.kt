@@ -18,6 +18,7 @@ object TvRoutes {
 
     const val SYNC = "sync"
     const val REMOTE_GUIDE = "remoteGuide"
+    const val IMPORT_DATA = "importData"
 
     /** [channelRef] is a full channel URL (preferred) or a bare channel id. */
     fun channel(channelRef: String): String = "channel?ref=${Uri.encode(channelRef)}"

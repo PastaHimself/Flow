@@ -18,13 +18,22 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.aedev.flow.R
+import io.github.aedev.flow.ui.tv.components.TvButton
 import io.github.aedev.flow.ui.tv.theme.LocalTvDimens
+
+data class TvPlayerChannelAction(
+    val channelRef: String?,
+    val onOpenChannel: (String) -> Unit,
+)
+
+val LocalTvPlayerChannelAction = staticCompositionLocalOf<TvPlayerChannelAction?> { null }
 
 /**
  * Transport chrome for the TV player: only the top metadata band carries a
@@ -86,13 +95,22 @@ fun BoxScope.TvPlayerOverlay(
                     )
                 }
                 if (channelName.isNotBlank()) {
-                    Text(
-                        text = channelName,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                    val channelAction = LocalTvPlayerChannelAction.current
+                    val channelRef = channelAction?.channelRef
+                    if (channelAction != null && !channelRef.isNullOrBlank()) {
+                        TvButton(
+                            text = channelName,
+                            onClick = { channelAction.onOpenChannel(channelRef) },
+                        )
+                    } else {
+                        Text(
+                            text = channelName,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
             }
         }
