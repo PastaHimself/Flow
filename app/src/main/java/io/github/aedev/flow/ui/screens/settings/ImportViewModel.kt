@@ -124,9 +124,10 @@ class ImportViewModel
             val label = context.getString(R.string.import_subscriptions_xml_title)
             viewModelScope.launch {
                 startProgress(label, 0, 0)
-                val result = opmlImporter.import(uri) { current, total ->
-                    updateProgress(label, current, total)
-                }
+                val result =
+                    opmlImporter.import(uri) { current, total ->
+                        updateProgress(label, current, total)
+                    }
                 handleOpmlResult(label, result)
             }
         }
@@ -337,11 +338,17 @@ class ImportViewModel
             if (error != null) Log.e(TAG, "OPML import failed: $label", error)
             val message =
                 when (error) {
-                    OpmlImportException.UnreadableFile ->
+                    OpmlImportException.UnreadableFile -> {
                         context.getString(R.string.import_subscriptions_xml_read_error)
-                    OpmlImportException.NoSubscriptions ->
+                    }
+
+                    OpmlImportException.NoSubscriptions -> {
                         context.getString(R.string.import_subscriptions_xml_no_entries)
-                    else -> context.getString(R.string.unknown_error)
+                    }
+
+                    else -> {
+                        context.getString(R.string.unknown_error)
+                    }
                 }
             _state.value = State.Error(label, message)
         }
@@ -367,10 +374,11 @@ class ImportViewModel
             error: Throwable?,
         ) {
             if (error != null) Log.e(TAG, "Import failed: $label", error)
-            _state.value = State.Error(
-                label,
-                safeImportErrorMessage(error?.message, context.getString(R.string.unknown_error)),
-            )
+            _state.value =
+                State.Error(
+                    label,
+                    safeImportErrorMessage(error?.message, context.getString(R.string.unknown_error)),
+                )
         }
 
     }

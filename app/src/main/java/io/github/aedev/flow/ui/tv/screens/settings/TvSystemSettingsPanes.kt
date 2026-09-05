@@ -27,8 +27,10 @@ fun TvFlowEngineSettingsPane(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val deepFlowActive by playerPreferences.deepFlowActive.collectAsStateWithLifecycle(initialValue = false)
-    val saveToHistory by playerPreferences.deepFlowSaveToHistory.collectAsStateWithLifecycle(initialValue = true)
+    val deepFlowActive by
+        playerPreferences.deepFlowActive.collectAsStateWithLifecycle(initialValue = false)
+    val saveToHistory by
+        playerPreferences.deepFlowSaveToHistory.collectAsStateWithLifecycle(initialValue = true)
 
     Column(
         modifier = modifier.fillMaxSize(),
@@ -66,16 +68,12 @@ fun TvInterfaceSettingsPane(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         AppUiMode.entries.forEach { mode ->
-            val label = when (mode) {
-                AppUiMode.AUTOMATIC -> stringResource(R.string.interface_mode_automatic)
-                AppUiMode.MOBILE -> stringResource(R.string.interface_mode_mobile)
-                AppUiMode.TV -> stringResource(R.string.interface_mode_tv)
-            }
-            val summary = when (mode) {
-                AppUiMode.AUTOMATIC -> stringResource(R.string.interface_mode_automatic_summary)
-                AppUiMode.MOBILE -> stringResource(R.string.interface_mode_mobile_summary)
-                AppUiMode.TV -> stringResource(R.string.interface_mode_tv_summary)
-            }
+            val label =
+                when (mode) {
+                    AppUiMode.AUTOMATIC -> stringResource(R.string.interface_mode_automatic)
+                    AppUiMode.MOBILE -> stringResource(R.string.interface_mode_mobile)
+                    AppUiMode.TV -> stringResource(R.string.interface_mode_tv_summary)
+                }
             TvSelectionRow(
                 label = label,
                 supportingText = summary,
