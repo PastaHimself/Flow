@@ -380,5 +380,4 @@ class ImportViewModel
                     safeImportErrorMessage(error?.message, context.getString(R.string.unknown_error)),
                 )
         }
-
     }
