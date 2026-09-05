@@ -132,6 +132,29 @@ class OpmlSubscriptionParserTest {
     }
 
     @Test
+    fun `parses UTF-8 BOM-prefixed OPML`() {
+        val xml =
+            "\uFEFF" +
+                """
+                <opml>
+                  <body>
+                    <outline
+                        text="BOM channel"
+                        xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UC1234567890123456789012" />
+                  </body>
+                </opml>
+                """.trimIndent()
+
+        assertThat(OpmlSubscriptionParser.parse(xml))
+            .containsExactly(
+                OpmlSubscriptionEntry(
+                    channelId = "UC1234567890123456789012",
+                    channelName = "BOM channel",
+                ),
+            )
+    }
+
+    @Test
     fun `builds subscriptions only for channel ids that are not already followed`() {
         val existingId = "UC1234567890123456789012"
         val newId = "UCabcdefghijklmnopqrstuv"
