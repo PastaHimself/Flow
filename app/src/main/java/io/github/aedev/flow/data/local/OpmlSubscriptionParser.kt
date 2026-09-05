@@ -19,7 +19,8 @@ internal object OpmlSubscriptionParser {
     private val youtubeChannelIdRegex = Regex("""UC[0-9A-Za-z_-]{22}""")
 
     fun parse(xml: String): List<OpmlSubscriptionEntry> {
-        if (!xml.trimStart().startsWith("<")) return emptyList()
+        val xmlWithoutBom = xml.removePrefix("\uFEFF")
+        if (!xmlWithoutBom.trimStart().startsWith("<")) return emptyList()
 
         val document =
             runCatching {
@@ -35,7 +36,7 @@ internal object OpmlSubscriptionParser {
                     .newDocumentBuilder()
                     .apply {
                         setEntityResolver { _, _ -> InputSource(StringReader("")) }
-                    }.parse(InputSource(StringReader(xml)))
+                    }.parse(InputSource(StringReader(xmlWithoutBom)))
             }.getOrNull() ?: return emptyList()
 
         val seen = LinkedHashSet<String>()
