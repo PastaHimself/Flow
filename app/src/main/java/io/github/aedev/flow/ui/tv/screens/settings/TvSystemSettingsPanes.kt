@@ -74,6 +74,12 @@ fun TvInterfaceSettingsPane(
                     AppUiMode.MOBILE -> stringResource(R.string.interface_mode_mobile)
                     AppUiMode.TV -> stringResource(R.string.interface_mode_tv)
                 }
+            val summary =
+                when (mode) {
+                    AppUiMode.AUTOMATIC -> stringResource(R.string.interface_mode_automatic_summary)
+                    AppUiMode.MOBILE -> stringResource(R.string.interface_mode_mobile_summary)
+                    AppUiMode.TV -> stringResource(R.string.interface_mode_tv_summary)
+                }
             TvSelectionRow(
                 label = label,
                 supportingText = summary,
