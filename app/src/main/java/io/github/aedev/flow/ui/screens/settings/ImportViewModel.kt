@@ -358,10 +358,10 @@ class ImportViewModel
                     NotificationHelper.showImportComplete(context, label, count)
                 }
             } else {
-                val msg = result.exceptionOrNull()?.message ?: context.getString(R.string.unknown_error)
-                _state.value = State.Error(label, msg)
+                setLocalizedError(label, result.exceptionOrNull())
             }
         }
+
         private fun setLocalizedError(
             label: String,
             error: Throwable?,
