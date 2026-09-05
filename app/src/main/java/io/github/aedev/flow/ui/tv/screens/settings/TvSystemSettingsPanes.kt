@@ -72,7 +72,7 @@ fun TvInterfaceSettingsPane(
                 when (mode) {
                     AppUiMode.AUTOMATIC -> stringResource(R.string.interface_mode_automatic)
                     AppUiMode.MOBILE -> stringResource(R.string.interface_mode_mobile)
-                    AppUiMode.TV -> stringResource(R.string.interface_mode_tv_summary)
+                    AppUiMode.TV -> stringResource(R.string.interface_mode_tv)
                 }
             TvSelectionRow(
                 label = label,
