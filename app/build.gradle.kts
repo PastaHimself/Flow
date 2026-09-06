@@ -92,6 +92,8 @@ android {
         }
     }
 
+    val ciSignReleaseWithDebug = project.findProperty("ciSignReleaseWithDebug") == "true"
+
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
@@ -123,19 +125,27 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            // Use release signing if configured, otherwise fallback to debug
-            val releaseKeystore =
-                try {
-                    signingConfigs.getByName("release").storeFile
-                } catch (e: Exception) {
-                    null
-                }
-            if (releaseKeystore?.exists() == true) {
-                signingConfig = signingConfigs.getByName("release")
-                println("Using RELEASE signing config with keystore: ${releaseKeystore.absolutePath}")
+            if (ciSignReleaseWithDebug) {
+                // PR artifacts must be installable, but must not masquerade as official releases.
+                applicationIdSuffix = ".ci"
+                versionNameSuffix = "-ci"
+                signingConfig = signingConfigs.getByName("debug")
+                println("Using DEBUG signing config for installable CI APKs.")
             } else {
-                signingConfig = null // Let Gradle build an unsigned APK for IzzyOnDroid/F-Droid
-                println("WARNING: Release keystore not found. Building UNSIGNED release APK.")
+                // Official release builds require the configured release keystore.
+                val releaseKeystore =
+                    try {
+                        signingConfigs.getByName("release").storeFile
+                    } catch (e: Exception) {
+                        null
+                    }
+                if (releaseKeystore?.exists() == true) {
+                    signingConfig = signingConfigs.getByName("release")
+                    println("Using RELEASE signing config with keystore: ${releaseKeystore.absolutePath}")
+                } else {
+                    signingConfig = null // Tag builds are rejected by CI before this point.
+                    println("WARNING: Release keystore not found. Building UNSIGNED release APK.")
+                }
             }
         }
     }
