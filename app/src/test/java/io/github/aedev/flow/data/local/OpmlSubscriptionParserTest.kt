@@ -33,7 +33,7 @@ class OpmlSubscriptionParserTest {
                     avatarFetcher = { throw IOException("Offline") },
                 )
 
-            assertThat(result).containsExactly(subscription)
+            assertThat(result).containsExactly(subscription).inOrder()
         }
 
     @Test
