@@ -62,6 +62,7 @@ jobs:
           if [ -n "$RELEASE_KEYSTORE_BASE64" ]; then
             echo "$RELEASE_KEYSTORE_BASE64" | base64 --decode > release.keystore
             echo "signed=true" >> "$GITHUB_OUTPUT"
+            echo "ci_debug_signing=false" >> "$GITHUB_OUTPUT"
             echo "Release keystore decoded."
           elif [ "${GITHUB_REF#refs/tags/v}" != "$GITHUB_REF" ]; then
             # A tag build publishes to GitHub Releases and IzzyOnDroid. Without
@@ -72,7 +73,8 @@ jobs:
             exit 1
           else
             echo "signed=false" >> "$GITHUB_OUTPUT"
-            echo "Release keystore secret is not available. Continuing with an unsigned CI build."
+            echo "ci_debug_signing=true" >> "$GITHUB_OUTPUT"
+            echo "Release keystore secret is not available. Using debug signing for installable CI artifacts."
           fi
 
       - name: Run unit tests
@@ -103,6 +105,7 @@ jobs:
         if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
         run: >
           ./gradlew :app:assembleGithubRelease :app:assembleGithubNightly :app:assembleFossRelease
+          -PciSignReleaseWithDebug=${{ steps.keystore.outputs.ci_debug_signing }}
           --max-workers=1 --build-cache --stacktrace
         env:
           STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
@@ -118,6 +121,34 @@ jobs:
           STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      # Every non-tag artifact must be installable. PR builds use the debug
+      # certificate and a .ci application id; official tag builds use the release key.
+      - name: Verify CI APKs are signed
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        run: |
+          set -euo pipefail
+          apksigner=$(find "$ANDROID_SDK_ROOT/build-tools" -name apksigner -type f | sort -V | tail -1)
+          if [ -z "$apksigner" ]; then
+            echo "::error::apksigner was not found in the runner Android SDK."
+            exit 1
+          fi
+
+          for apk in \
+            app/build/outputs/apk/github/release/app-github-universal-release.apk \
+            app/build/outputs/apk/github/release/app-github-arm64-v8a-release.apk \
+            app/build/outputs/apk/github/release/app-github-armeabi-v7a-release.apk \
+            app/build/outputs/apk/foss/release/app-foss-universal-release.apk \
+            app/build/outputs/apk/foss/release/app-foss-arm64-v8a-release.apk \
+            app/build/outputs/apk/foss/release/app-foss-armeabi-v7a-release.apk
+          do
+            if [ ! -f "$apk" ]; then
+              echo "::error::Missing expected CI APK $apk"
+              exit 1
+            fi
+            "$apksigner" verify "$apk"
+            echo "OK $(basename "$apk") is signed."
+          done
 
       # Guards the IzzyOnDroid/F-Droid update path: a wrong or missing key here
       # is unrecoverable for installed users, so fail the build rather than

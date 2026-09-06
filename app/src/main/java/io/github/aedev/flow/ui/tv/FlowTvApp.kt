@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -26,6 +27,9 @@ import io.github.aedev.flow.ui.screens.player.VideoPlayerViewModel
 import io.github.aedev.flow.ui.screens.search.SearchViewModel
 import io.github.aedev.flow.ui.screens.subscriptions.SubscriptionsViewModel
 import io.github.aedev.flow.ui.tv.music.TvMusicNowPlayingScreen
+import io.github.aedev.flow.ui.tv.navigation.TvRoutes
+import io.github.aedev.flow.ui.tv.player.LocalTvPlayerChannelAction
+import io.github.aedev.flow.ui.tv.player.TvPlayerChannelAction
 import io.github.aedev.flow.ui.tv.screens.TvPlayerScreen
 import io.github.aedev.flow.ui.tv.theme.TvTheme
 
@@ -61,6 +65,17 @@ fun FlowTvApp(
         EnhancedMusicPlayerManager.pause()
         GlobalPlayerState.setCurrentVideo(video)
         playerViewModel.playVideo(video)
+    }
+
+    fun closeVideo() {
+        playerViewModel.clearVideo()
+        GlobalPlayerState.setCurrentVideo(null)
+    }
+
+    fun openVideoChannel(channelRef: String) {
+        if (channelRef.isBlank()) return
+        closeVideo()
+        navController.navigate(TvRoutes.channel(channelRef))
     }
 
     fun playPlaylist(
@@ -124,14 +139,19 @@ fun FlowTvApp(
                     },
                 )
             } else {
-                TvPlayerScreen(
-                    video = video,
-                    viewModel = playerViewModel,
-                    onClose = {
-                        playerViewModel.clearVideo()
-                        GlobalPlayerState.setCurrentVideo(null)
-                    },
-                )
+                CompositionLocalProvider(
+                    LocalTvPlayerChannelAction provides
+                        TvPlayerChannelAction(
+                            channelRef = video.channelId.takeIf { it.isNotBlank() },
+                            onOpenChannel = ::openVideoChannel,
+                        ),
+                ) {
+                    TvPlayerScreen(
+                        video = video,
+                        viewModel = playerViewModel,
+                        onClose = ::closeVideo,
+                    )
+                }
             }
         }
     }
