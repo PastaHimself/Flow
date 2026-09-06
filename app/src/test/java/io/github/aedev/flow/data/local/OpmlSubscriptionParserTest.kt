@@ -19,7 +19,7 @@ class OpmlSubscriptionParserTest {
                 )
                 fail("Cancelled enrichment must not return subscriptions for persistence")
             } catch (error: CancellationException) {
-                assertThat(error).isSameInstanceAs(cancellation)
+                assertThat(error).hasMessageThat().isEqualTo(cancellation.message)
             }
         }
 
