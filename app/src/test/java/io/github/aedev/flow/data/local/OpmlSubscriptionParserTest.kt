@@ -1,10 +1,41 @@
 package io.github.aedev.flow.data.local
 
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert.fail
 import org.junit.Test
+import java.io.IOException
 
 class OpmlSubscriptionParserTest {
+    @Test
+    fun `avatar enrichment propagates cancellation`() =
+        runBlocking {
+            val cancellation = CancellationException("Import cancelled")
+            try {
+                enrichOpmlSubscriptionAvatars(
+                    subscriptions = listOf(ChannelSubscription("UCabcdefghijklmnopqrstuv", "Channel", "")),
+                    avatarFetcher = { throw cancellation },
+                )
+                fail("Cancelled enrichment must not return subscriptions for persistence")
+            } catch (error: CancellationException) {
+                assertThat(error).isSameInstanceAs(cancellation)
+            }
+        }
+
+    @Test
+    fun `avatar network failure preserves the subscription`() =
+        runBlocking {
+            val subscription = ChannelSubscription("UCabcdefghijklmnopqrstuv", "Channel", "")
+            val result =
+                enrichOpmlSubscriptionAvatars(
+                    subscriptions = listOf(subscription),
+                    avatarFetcher = { throw IOException("Offline") },
+                )
+
+            assertThat(result).containsExactly(subscription)
+        }
+
     @Test
     fun `parses YouTube feed outlines and decodes names`() {
         val xml =

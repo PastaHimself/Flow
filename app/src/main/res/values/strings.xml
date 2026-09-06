@@ -2772,4 +2772,5 @@
     <string name="remove_from_queue_confirmation">Are you sure you want to remove this video from the queue?</string>
     <string name="reorder_queue_item">Reorder queue item</string>
     <string name="music_search_no_results">No results for \"%1$s\"</string>
+    <string name="tv_import_picker_unavailable">No document picker is installed. Install a compatible file manager, or use device sync in Settings.</string>
 </resources>

@@ -140,21 +140,7 @@ fun TvNavHost(
         composable(TvRoutes.IMPORT_DATA) {
             TvImportDataScreen(onNavigateBack = { navController.popBackStack() })
         }
-        composable(
-            route = TvRoutes.CHANNEL,
-            arguments =
-                listOf(
-                    navArgument(TvRoutes.CHANNEL_ARG) {
-                        type = NavType.StringType
-                        defaultValue = ""
-                    },
-                ),
-        ) { entry ->
-            val channelRef =
-                entry.arguments
-                    ?.getString(TvRoutes.CHANNEL_ARG)
-                    ?.let { java.net.URLDecoder.decode(it, "UTF-8") }
-                    .orEmpty()
+        tvChannelDestination { channelRef ->
             TvChannelScreen(
                 channelUrl = channelRef,
                 onVideoClick = onPlayVideo,

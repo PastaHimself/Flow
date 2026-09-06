@@ -114,7 +114,14 @@ internal suspend fun enrichOpmlSubscriptionAvatars(
                 async(Dispatchers.IO) {
                     val enriched =
                         semaphore.withPermit {
-                            val avatar = runCatching { avatarFetcher(subscription.channelId) }.getOrDefault("")
+                            val avatar =
+                                try {
+                                    avatarFetcher(subscription.channelId)
+                                } catch (e: CancellationException) {
+                                    throw e
+                                } catch (e: Exception) {
+                                    ""
+                                }
                             if (avatar.isBlank()) subscription else subscription.copy(channelThumbnail = avatar)
                         }
                     onProgress?.invoke(completed.incrementAndGet(), subscriptions.size)

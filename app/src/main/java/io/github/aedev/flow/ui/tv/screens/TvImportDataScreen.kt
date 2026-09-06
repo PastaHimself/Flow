@@ -1,6 +1,9 @@
 package io.github.aedev.flow.ui.tv.screens
 
+import android.net.Uri
+import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -48,6 +51,16 @@ fun TvImportDataScreen(
     val viewModel: ImportViewModel = hiltViewModel(activity)
     val state by viewModel.state.collectAsStateWithLifecycle()
     val dimens = LocalTvDimens.current
+
+    fun launchImport(
+        launcher: ManagedActivityResultLauncher<Array<String>, Uri?>,
+        mimeTypes: Array<String>,
+    ) {
+        if (state is ImportViewModel.State.Running) return
+        if (!launchTvImportPicker { launcher.launch(mimeTypes) }) {
+            Toast.makeText(context, R.string.tv_import_picker_unavailable, Toast.LENGTH_LONG).show()
+        }
+    }
 
     val flowBackupLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -104,38 +117,38 @@ fun TvImportDataScreen(
                     label = stringResource(R.string.import_flow_backup_item_title),
                     supportingText = stringResource(R.string.import_flow_backup_desc),
                     selected = false,
-                    onClick = { flowBackupLauncher.launch(jsonMimeTypes) },
+                    onClick = { launchImport(flowBackupLauncher, jsonMimeTypes) },
                     modifier = Modifier.tvInitialFocus(),
                 )
                 TvSelectionRow(
                     label = stringResource(R.string.import_master_backup_title),
                     supportingText = stringResource(R.string.import_master_backup_desc),
                     selected = false,
-                    onClick = { masterBackupLauncher.launch(zipMimeTypes) },
+                    onClick = { launchImport(masterBackupLauncher, zipMimeTypes) },
                 )
                 TvSelectionRow(
                     label = stringResource(R.string.import_subscriptions_xml_title),
                     supportingText = stringResource(R.string.import_subscriptions_xml_desc),
                     selected = false,
-                    onClick = { opmlLauncher.launch(xmlMimeTypes) },
+                    onClick = { launchImport(opmlLauncher, xmlMimeTypes) },
                 )
                 TvSelectionRow(
                     label = stringResource(R.string.import_from_newpipe),
                     supportingText = stringResource(R.string.import_from_newpipe_desc),
                     selected = false,
-                    onClick = { newPipeLauncher.launch(jsonMimeTypes) },
+                    onClick = { launchImport(newPipeLauncher, jsonMimeTypes) },
                 )
                 TvSelectionRow(
                     label = stringResource(R.string.import_from_libretube),
                     supportingText = stringResource(R.string.import_from_libretube_desc),
                     selected = false,
-                    onClick = { libreTubeLauncher.launch(jsonMimeTypes) },
+                    onClick = { launchImport(libreTubeLauncher, jsonMimeTypes) },
                 )
                 TvSelectionRow(
                     label = stringResource(R.string.import_yt_takeout_all),
                     supportingText = stringResource(R.string.import_yt_takeout_all_desc),
                     selected = false,
-                    onClick = { takeoutLauncher.launch(zipMimeTypes) },
+                    onClick = { launchImport(takeoutLauncher, zipMimeTypes) },
                 )
             }
         }
