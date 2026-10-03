@@ -29,8 +29,6 @@ dependencies {
     implementation(libs.coil.network.okhttp)
     implementation(libs.kotlinx.coroutines.swing)
     implementation(libs.kotlinx.serialization.json)
-    implementation(libs.newpipe.extractor)
-    implementation(libs.okhttp)
 
     testImplementation(libs.junit)
 }
@@ -49,9 +47,9 @@ compose.desktop {
             linux {
                 iconFile.set(project.file("src/main/resources/flow.png"))
                 packageName = "flow"
-                debMaintainer = "PastaHimself/Flow contributors"
+                debMaintainer = "flow.aedev@gmail.com"
                 menuGroup = "AudioVideo"
-                appCategory = "AudioVideo"
+                appCategory = "video"
             }
         }
     }
@@ -73,7 +71,7 @@ val normalizeDebScript = layout.projectDirectory.file("scripts/normalize-deb-dep
 val normalizeDebDependencies =
     tasks.register<Exec>("normalizeDebDependencies") {
         group = "compose desktop"
-        description = "Adds pre-t64 Debian package alternatives to the Compose-generated DEB."
+        description = "Normalizes and validates Compose-generated Debian runtime dependencies."
         commandLine(
             "bash",
             normalizeDebScript.absolutePath,
@@ -84,6 +82,7 @@ val normalizeDebDependencies =
 
 tasks.configureEach {
     if (name == "packageDeb") {
+        dependsOn("createRuntimeImage")
         finalizedBy(normalizeDebDependencies)
     }
 }
