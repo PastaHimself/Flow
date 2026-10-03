@@ -131,7 +131,9 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update
-          sudo apt-get install -y desktop-file-utils xvfb xauth "./${DEB_PATH}"
+          sudo apt-get install -y desktop-file-utils xvfb xauth
+          sudo install -d -m 0755 /usr/share/applications /usr/share/desktop-directories
+          sudo apt-get install -y "./${DEB_PATH}"
 
           dpkg-query -W -f='${Status}\n' flow | grep -Fx 'install ok installed'
           command -v mpv
