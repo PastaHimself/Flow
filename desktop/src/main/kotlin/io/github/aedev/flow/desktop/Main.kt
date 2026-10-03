@@ -1,8 +1,6 @@
 package io.github.aedev.flow.desktop
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,25 +9,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bookmarks
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LibraryMusic
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.outlined.BookmarkAdd
+import androidx.compose.material.icons.filled.Subscriptions
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
@@ -38,6 +28,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
@@ -50,73 +41,99 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.MenuBar
+import androidx.compose.ui.window.Notification
+import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
-import coil3.compose.AsyncImage
+import androidx.compose.ui.window.isTraySupported
+import androidx.compose.ui.window.rememberTrayState
 import io.github.aedev.flow.data.model.Video
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.Locale
+import java.awt.FileDialog
+import java.awt.Frame
+import java.nio.file.Path
 
 private enum class Destination(
     val label: String,
 ) {
     HOME("Home"),
     SEARCH("Search"),
+    SUBSCRIPTIONS("Subscriptions"),
     LIBRARY("Library"),
+    DOWNLOADS("Downloads"),
     SETTINGS("Settings"),
 }
 
 fun main() =
     application {
+        val trayState = rememberTrayState()
+        val trayIcon = rememberVectorPainter(Icons.Default.Home)
+        if (isTraySupported) {
+            Tray(
+                icon = trayIcon,
+                state = trayState,
+                tooltip = "Flow",
+                menu = {
+                    Item("Open Flow website", onClick = { openExternalUrl("https://github.com/A-EDev/Flow") })
+                    Separator()
+                    Item("Quit", onClick = ::exitApplication)
+                },
+            )
+        }
         Window(
             onCloseRequest = ::exitApplication,
             title = "Flow",
         ) {
+            MenuBar {
+                Menu("Flow") {
+                    Item("Project website", onClick = { openExternalUrl("https://github.com/A-EDev/Flow") })
+                    Separator()
+                    Item("Quit", onClick = ::exitApplication)
+                }
+            }
             FlowDesktopTheme {
-                FlowDesktopApp()
+                FlowDesktopApp(
+                    onNotify = { title, message ->
+                        if (isTraySupported) trayState.sendNotification(Notification(title, message))
+                    },
+                )
             }
         }
     }
 
 @Composable
 private fun FlowDesktopTheme(content: @Composable () -> Unit) {
-    val colors =
-        darkColorScheme(
-            primary = Color(0xFFFF0000),
-            onPrimary = Color.White,
-            secondary = Color(0xFFAAAAAA),
-            background = Color(0xFF0F0F0F),
-            surface = Color(0xFF1D1D1D),
-            onSurface = Color(0xFFF4F4F4),
-            onSurfaceVariant = Color(0xFFB8B8B8),
-            outline = Color(0xFF343434),
-            error = Color(0xFFEF5350),
-        )
-    MaterialTheme(colorScheme = colors, content = content)
+    MaterialTheme(colorScheme = darkColorScheme(), content = content)
 }
 
 @Composable
-private fun FlowDesktopApp() {
+private fun FlowDesktopApp(onNotify: (String, String) -> Unit) {
     val repository = remember { DesktopYouTubeRepository() }
     val libraryStore = remember { DesktopLibraryStore() }
     val player = remember { DesktopMpvPlayer() }
+    val downloader = remember { DesktopDownloader() }
     val scope = rememberCoroutineScope()
     var destination by remember { mutableStateOf(Destination.HOME) }
     val initialSavedVideos = remember { libraryStore.load() }
     var savedVideos by remember { mutableStateOf(initialSavedVideos) }
+    var history by remember { mutableStateOf(libraryStore.loadHistory()) }
+    var subscriptions by remember { mutableStateOf(libraryStore.loadSubscriptions()) }
+    var playlists by remember { mutableStateOf(libraryStore.loadPlaylists()) }
+    var searchHistory by remember { mutableStateOf(libraryStore.loadSearchHistory()) }
+    var currentVideo by remember { mutableStateOf<Video?>(null) }
+    var playerPaused by remember { mutableStateOf(false) }
+    var playlistTarget by remember { mutableStateOf<Video?>(null) }
+    var playlistName by remember { mutableStateOf("My playlist") }
     var statusMessage by remember {
         mutableStateOf(
-            libraryStore.loadError?.let { error ->
-                "Could not read the existing library: ${error.message ?: error.javaClass.simpleName}. Flow will not overwrite it."
+            libraryStore.loadErrors.entries.firstOrNull()?.let { (path, error) ->
+                "Could not read ${path.fileName}: ${error.message ?: error.javaClass.simpleName}. Flow will not overwrite it."
             },
         )
     }
@@ -125,6 +142,8 @@ private fun FlowDesktopApp() {
     var homeError by remember { mutableStateOf<String?>(null) }
     var homeReloadKey by remember { mutableStateOf(0) }
     val recommendationQuery = libraryStore.recommendationQuery(savedVideos)
+    val savedIds = savedVideos.mapTo(hashSetOf(), Video::id)
+    val subscribedIds = subscriptions.mapTo(hashSetOf(), DesktopSubscription::channelId)
 
     fun toggleSaved(video: Video) {
         val updatedVideos =
@@ -133,14 +152,53 @@ private fun FlowDesktopApp() {
             } else {
                 listOf(video) + savedVideos
             }
-        runCatching { libraryStore.save(updatedVideos) }
-            .onSuccess { savedVideos = updatedVideos }
-            .onFailure { statusMessage = "Could not save library: ${it.message}" }
+        scope.launch {
+            runCatching { withContext(Dispatchers.IO) { libraryStore.save(updatedVideos) } }
+                .onSuccess { savedVideos = updatedVideos }
+                .onFailure { statusMessage = "Could not save library: ${it.message}" }
+        }
+    }
+
+    fun toggleSubscription(video: Video) {
+        scope.launch {
+            runCatching { withContext(Dispatchers.IO) { libraryStore.toggleSubscription(video) } }
+                .onSuccess { subscriptions = it }
+                .onFailure { statusMessage = "Could not update subscription: ${it.message}" }
+        }
+    }
+
+    fun download(video: Video) {
+        if (!downloader.isAvailable) {
+            statusMessage = downloader.unavailableReason
+            return
+        }
+        statusMessage = "Downloading ${video.title}…"
+        scope.launch {
+            runCatching { downloader.download(video) }
+                .onSuccess { path ->
+                    statusMessage = "Downloaded to $path"
+                    onNotify("Download complete", video.title)
+                }.onFailure { failure ->
+                    statusMessage = "Download failed: ${failure.message}"
+                    onNotify("Download failed", video.title)
+                }
+        }
+    }
+
+    fun copyLink(video: Video) {
+        copyToClipboard("https://www.youtube.com/watch?v=${video.id}")
+            .onSuccess { statusMessage = "Copied video link." }
+            .onFailure { statusMessage = "Could not copy link: ${it.message}" }
+    }
+
+    fun addToPlaylist(video: Video) {
+        playlistTarget = video
+        playlistName = playlists.firstOrNull()?.name ?: "My playlist"
     }
 
     fun play(video: Video) {
-        if (!player.isAvailable) {
-            statusMessage = player.unavailableReason
+        if (!player.canPlayYouTube) {
+            statusMessage = player.youtubeUnavailableReason
             return
         }
         scope.launch {
@@ -148,7 +206,39 @@ private fun FlowDesktopApp() {
                 withContext(Dispatchers.IO) {
                     runCatching { player.play("https://www.youtube.com/watch?v=${video.id}") }.exceptionOrNull()
                 }
-            if (error != null) statusMessage = "Playback failed: ${error.message}"
+            if (error != null) {
+                statusMessage = "Playback failed: ${error.message}"
+            } else {
+                currentVideo = video
+                playerPaused = false
+                runCatching { withContext(Dispatchers.IO) { libraryStore.recordWatched(video) } }
+                    .onSuccess { history = it }
+                    .onFailure { statusMessage = "Could not update history: ${it.message}" }
+            }
+        }
+    }
+
+    fun playFile(path: Path) {
+        if (!player.canPlayLocal) {
+            statusMessage = player.unavailableReason
+            return
+        }
+        scope.launch {
+            runCatching { withContext(Dispatchers.IO) { player.play(path.toAbsolutePath().toString()) } }
+                .onSuccess {
+                    currentVideo =
+                        Video(
+                            id = "local:${path.toAbsolutePath()}",
+                            title = path.fileName.toString(),
+                            channelName = "Local media",
+                            channelId = "local",
+                            thumbnailUrl = "",
+                            duration = 0,
+                            viewCount = 0,
+                            uploadDate = "",
+                        )
+                    playerPaused = false
+                }.onFailure { statusMessage = "Playback failed: ${it.message}" }
         }
     }
 
@@ -157,7 +247,7 @@ private fun FlowDesktopApp() {
         homeLoading = true
         homeError = null
         try {
-            homeVideos = if (recommendationQuery == null) repository.trending() else repository.searchVideos(recommendationQuery)
+            homeVideos = repository.discover(recommendationQuery)
         } catch (error: CancellationException) {
             throw error
         } catch (error: Throwable) {
@@ -170,6 +260,38 @@ private fun FlowDesktopApp() {
         onDispose { player.close() }
     }
 
+    playlistTarget?.let { target ->
+        AlertDialog(
+            onDismissRequest = { playlistTarget = null },
+            title = { Text("Add to playlist") },
+            text = {
+                OutlinedTextField(
+                    value = playlistName,
+                    onValueChange = { playlistName = it },
+                    singleLine = true,
+                    label = { Text("Playlist name") },
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = playlistName.isNotBlank(),
+                    onClick = {
+                        val name = playlistName
+                        playlistTarget = null
+                        scope.launch {
+                            runCatching { withContext(Dispatchers.IO) { libraryStore.addToPlaylist(name, target) } }
+                                .onSuccess {
+                                    playlists = it
+                                    statusMessage = "Added to $name."
+                                }.onFailure { statusMessage = "Could not update playlist: ${it.message}" }
+                        }
+                    },
+                ) { Text("Add") }
+            },
+            dismissButton = { TextButton(onClick = { playlistTarget = null }) { Text("Cancel") } },
+        )
+    }
+
     Scaffold { padding ->
         Row(
             modifier = Modifier.fillMaxSize().padding(padding),
@@ -180,8 +302,7 @@ private fun FlowDesktopApp() {
                     Text(
                         text = "Flow",
                         color = MaterialTheme.colorScheme.primary,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.headlineSmall,
                         modifier = Modifier.padding(vertical = 18.dp),
                     )
                 },
@@ -196,7 +317,9 @@ private fun FlowDesktopApp() {
                                     when (item) {
                                         Destination.HOME -> Icons.Default.Home
                                         Destination.SEARCH -> Icons.Default.Search
+                                        Destination.SUBSCRIPTIONS -> Icons.Default.Subscriptions
                                         Destination.LIBRARY -> Icons.Default.LibraryMusic
+                                        Destination.DOWNLOADS -> Icons.Default.Download
                                         Destination.SETTINGS -> Icons.Default.Settings
                                     },
                                 contentDescription = item.label,
@@ -231,359 +354,116 @@ private fun FlowDesktopApp() {
                             videos = homeVideos,
                             loading = homeLoading,
                             error = homeError,
-                            savedIds = savedVideos.mapTo(hashSetOf()) { it.id },
+                            savedIds = savedIds,
+                            subscribedIds = subscribedIds,
                             recommendationQuery = recommendationQuery,
                             onRetry = { homeReloadKey++ },
                             onPlay = ::play,
                             onToggleSaved = ::toggleSaved,
+                            onDownload = ::download,
+                            onToggleSubscription = ::toggleSubscription,
+                            onCopyLink = ::copyLink,
+                            onAddToPlaylist = ::addToPlaylist,
                         )
                     }
 
                     Destination.SEARCH -> {
                         SearchScreen(
                             repository = repository,
-                            savedIds = savedVideos.mapTo(hashSetOf()) { it.id },
+                            savedIds = savedIds,
+                            subscribedIds = subscribedIds,
+                            searchHistory = searchHistory,
+                            onSearch = { query ->
+                                scope.launch {
+                                    runCatching { withContext(Dispatchers.IO) { libraryStore.recordSearch(query) } }
+                                        .onSuccess { searchHistory = it }
+                                        .onFailure { statusMessage = "Could not update search history: ${it.message}" }
+                                }
+                            },
                             onPlay = ::play,
                             onToggleSaved = ::toggleSaved,
+                            onDownload = ::download,
+                            onToggleSubscription = ::toggleSubscription,
+                            onCopyLink = ::copyLink,
+                            onAddToPlaylist = ::addToPlaylist,
+                        )
+                    }
+
+                    Destination.SUBSCRIPTIONS -> {
+                        SubscriptionsScreen(
+                            subscriptions = subscriptions,
+                            repository = repository,
+                            savedIds = savedIds,
+                            subscribedIds = subscribedIds,
+                            onPlay = ::play,
+                            onToggleSaved = ::toggleSaved,
+                            onDownload = ::download,
+                            onToggleSubscription = ::toggleSubscription,
                         )
                     }
 
                     Destination.LIBRARY -> {
                         LibraryScreen(
-                            videos = savedVideos,
+                            savedVideos = savedVideos,
+                            history = history,
+                            playlists = playlists,
+                            savedIds = savedIds,
+                            subscribedIds = subscribedIds,
                             onPlay = ::play,
                             onToggleSaved = ::toggleSaved,
+                            onDownload = ::download,
+                            onToggleSubscription = ::toggleSubscription,
+                            onClearHistory = {
+                                scope.launch {
+                                    runCatching { withContext(Dispatchers.IO) { libraryStore.clearHistory() } }
+                                        .onSuccess { history = emptyList() }
+                                        .onFailure { statusMessage = "Could not clear history: ${it.message}" }
+                                }
+                            },
+                            onRemovePlaylist = { name ->
+                                scope.launch {
+                                    runCatching { withContext(Dispatchers.IO) { libraryStore.removePlaylist(name) } }
+                                        .onSuccess { playlists = it }
+                                        .onFailure { statusMessage = "Could not remove playlist: ${it.message}" }
+                                }
+                            },
+                        )
+                    }
+
+                    Destination.DOWNLOADS -> {
+                        DownloadsScreen(
+                            downloader = downloader,
+                            onPlayFile = ::playFile,
+                            onOpenLocalFile = { pickMediaFile()?.let(::playFile) },
                         )
                     }
 
                     Destination.SETTINGS -> {
-                        SettingsScreen(player = player, libraryStore = libraryStore)
+                        SettingsScreen(player = player, repository = repository, downloader = downloader, libraryStore = libraryStore)
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun HomeScreen(
-    videos: List<Video>,
-    loading: Boolean,
-    error: String?,
-    savedIds: Set<String>,
-    recommendationQuery: String?,
-    onRetry: () -> Unit,
-    onPlay: (Video) -> Unit,
-    onToggleSaved: (Video) -> Unit,
-) {
-    ScreenColumn(
-        title = "Home",
-        subtitle = recommendationQuery?.let { "Local recommendation seed: $it" } ?: "Trending on YouTube",
-    ) {
-        when {
-            loading -> LoadingState()
-            error != null -> ErrorState(error, onRetry)
-            videos.isEmpty() -> EmptyState("No videos were returned.")
-            else -> VideoList(videos, savedIds, onPlay, onToggleSaved)
-        }
-    }
-}
-
-@Composable
-private fun SearchScreen(
-    repository: DesktopYouTubeRepository,
-    savedIds: Set<String>,
-    onPlay: (Video) -> Unit,
-    onToggleSaved: (Video) -> Unit,
-) {
-    val scope = rememberCoroutineScope()
-    var query by remember { mutableStateOf("") }
-    var results by remember { mutableStateOf(emptyList<Video>()) }
-    var loading by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
-    var searchRequestId by remember { mutableStateOf(0L) }
-
-    fun search() {
-        val submittedQuery = query.trim()
-        if (submittedQuery.isBlank()) return
-        val requestId = ++searchRequestId
-        loading = true
-        error = null
-        scope.launch {
-            val outcome = runCatching { repository.searchVideos(submittedQuery) }
-            if (requestId != searchRequestId) return@launch
-            outcome
-                .onSuccess { results = it }
-                .onFailure { error = it.message ?: it.javaClass.simpleName }
-            loading = false
-        }
-    }
-
-    ScreenColumn(title = "Search", subtitle = "Search YouTube without an account") {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            OutlinedTextField(
-                value = query,
-                onValueChange = { value ->
-                    query = value
-                    searchRequestId++
-                    loading = false
-                    error = null
-                },
-                singleLine = true,
-                label = { Text("Search videos") },
-                modifier = Modifier.weight(1f),
-            )
-            Button(onClick = ::search, enabled = query.isNotBlank() && !loading) {
-                Icon(Icons.Default.Search, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text("Search")
-            }
-        }
-        Spacer(Modifier.height(20.dp))
-        when {
-            loading -> LoadingState()
-            error != null -> ErrorState(error!!, ::search)
-            results.isEmpty() -> EmptyState("Enter a query to find videos.")
-            else -> VideoList(results, savedIds, onPlay, onToggleSaved)
-        }
-    }
-}
-
-@Composable
-private fun LibraryScreen(
-    videos: List<Video>,
-    onPlay: (Video) -> Unit,
-    onToggleSaved: (Video) -> Unit,
-) {
-    ScreenColumn(title = "Library", subtitle = "Saved locally on this computer") {
-        if (videos.isEmpty()) {
-            EmptyState("Save videos from Home or Search to build your desktop library.")
-        } else {
-            VideoList(videos, videos.mapTo(hashSetOf()) { it.id }, onPlay, onToggleSaved)
-        }
-    }
-}
-
-@Composable
-private fun SettingsScreen(
-    player: DesktopMpvPlayer,
-    libraryStore: DesktopLibraryStore,
-) {
-    ScreenColumn(title = "Settings", subtitle = "Linux (experimental)") {
-        SettingCard(
-            title = "Playback",
-            body =
-                if (player.isAvailable) {
-                    "mpv + yt-dlp detected. Playback opens in an mpv window."
-                } else {
-                    player.unavailableReason.orEmpty()
-                },
-        )
-        SettingCard(
-            title = "Local data",
-            body = "Saved library: ${libraryStore.file}",
-        )
-        SettingCard(
-            title = "Current desktop scope",
-            body =
-                "Home/discovery, search, metadata, thumbnails, local saved library and optional mpv playback are implemented. " +
-                    "Android-only downloads, casting, widgets, notifications, CameraX, WorkManager and Media3 features remain " +
-                    "unavailable on Linux.",
-        )
-        SettingCard(
-            title = "Recommendations",
-            body =
-                "The desktop seed picker reuses FlowNeuro's shared text normalization and keeps its data local. " +
-                    "The full Android FlowNeuro profile/storage engine is not enabled yet because it currently depends on " +
-                    "Android lifecycle, " +
-                    "preferences and storage APIs.",
-        )
-    }
-}
-
-@Composable
-private fun SettingCard(
-    title: String,
-    body: String,
-) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
-    ) {
-        Column(modifier = Modifier.padding(18.dp)) {
-            Text(title, fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
-            Spacer(Modifier.height(6.dp))
-            Text(body, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
-}
-
-@Composable
-private fun ScreenColumn(
-    title: String,
-    subtitle: String,
-    content: @Composable () -> Unit,
-) {
-    Column(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 28.dp, vertical = 24.dp),
-    ) {
-        Text(title, fontSize = 30.sp, fontWeight = FontWeight.Bold)
-        Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.height(22.dp))
-        Box(modifier = Modifier.fillMaxSize()) { content() }
-    }
-}
-
-@Composable
-private fun VideoList(
-    videos: List<Video>,
-    savedIds: Set<String>,
-    onPlay: (Video) -> Unit,
-    onToggleSaved: (Video) -> Unit,
-) {
-    LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = Modifier.fillMaxSize(),
-    ) {
-        items(videos, key = { it.id }) { video ->
-            VideoCard(
-                video = video,
-                saved = video.id in savedIds,
-                onPlay = { onPlay(video) },
-                onToggleSaved = { onToggleSaved(video) },
-            )
-        }
-    }
-}
-
-@Composable
-private fun VideoCard(
-    video: Video,
-    saved: Boolean,
-    onPlay: () -> Unit,
-    onToggleSaved: () -> Unit,
-) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(16.dp),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(12.dp),
-        ) {
-            AsyncImage(
-                model = video.thumbnailUrl,
-                contentDescription = video.title,
-                contentScale = ContentScale.Crop,
-                modifier =
-                    Modifier
-                        .size(width = 224.dp, height = 126.dp)
-                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp)),
-            )
-            Spacer(Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = video.title,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    text = video.channelName,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                val metadata =
-                    buildList {
-                        if (video.isLive) {
-                            add("LIVE")
-                        } else if (video.duration > 0) {
-                            add(formatDuration(video.duration))
-                        }
-                        if (video.viewCount > 0) add("${formatCount(video.viewCount)} views")
-                        if (video.uploadDate.isNotBlank()) add(video.uploadDate)
-                    }
-                if (metadata.isNotEmpty()) {
-                    Text(
-                        text = metadata.joinToString(" · "),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 13.sp,
-                    )
-                }
-                if (video.description.isNotBlank()) {
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = video.description,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        fontSize = 13.sp,
-                    )
-                }
-            }
-            IconButton(onClick = onToggleSaved) {
-                Icon(
-                    imageVector = if (saved) Icons.Default.Bookmarks else Icons.Outlined.BookmarkAdd,
-                    contentDescription = if (saved) "Remove from library" else "Save to library",
+                DesktopPlayerBar(
+                    video = currentVideo,
+                    player = player,
+                    paused = playerPaused,
+                    onPauseToggle = {
+                        player.togglePause()
+                        playerPaused = player.paused
+                    },
+                    onStop = {
+                        player.stop()
+                        currentVideo = null
+                        playerPaused = false
+                    },
                 )
             }
-            IconButton(onClick = onPlay) {
-                Icon(Icons.Default.PlayArrow, contentDescription = "Play")
-            }
         }
     }
 }
 
-@Composable
-private fun LoadingState() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator()
-    }
+private fun pickMediaFile(): Path? {
+    val dialog = FileDialog(null as Frame?, "Open media", FileDialog.LOAD)
+    dialog.isVisible = true
+    val file = dialog.file ?: return null
+    return Path.of(dialog.directory, file)
 }
-
-@Composable
-private fun EmptyState(message: String) {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(message, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
-@Composable
-private fun ErrorState(
-    message: String,
-    onRetry: () -> Unit,
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = Modifier.fillMaxSize(),
-    ) {
-        Text("Could not load videos", fontWeight = FontWeight.SemiBold)
-        Text(message, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.height(12.dp))
-        Button(onClick = onRetry) { Text("Retry") }
-    }
-}
-
-private fun formatDuration(seconds: Int): String {
-    val hours = seconds / 3600
-    val minutes = (seconds % 3600) / 60
-    val remaining = seconds % 60
-    return if (hours > 0) "%d:%02d:%02d".format(hours, minutes, remaining) else "%d:%02d".format(minutes, remaining)
-}
-
-private fun formatCount(value: Long): String =
-    when {
-        value >= 1_000_000_000 -> String.format(Locale.ROOT, "%.1fB", value / 1_000_000_000.0)
-        value >= 1_000_000 -> String.format(Locale.ROOT, "%.1fM", value / 1_000_000.0)
-        value >= 1_000 -> String.format(Locale.ROOT, "%.1fK", value / 1_000.0)
-        else -> value.toString()
-    }

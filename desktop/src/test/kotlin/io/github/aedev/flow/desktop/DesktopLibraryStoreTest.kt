@@ -64,6 +64,73 @@ class DesktopLibraryStoreTest {
         assertEquals("not-json", store.file.toFile().readText())
     }
 
+    @Test
+    fun malformedSecondaryStoreIsNotSilentlyOverwritten() {
+        val store = DesktopLibraryStore(temporaryFolder.root.toPath())
+        store.historyFile.parent
+            .toFile()
+            .mkdirs()
+        store.historyFile.toFile().writeText("not-json")
+
+        assertTrue(store.loadHistory().isEmpty())
+        assertNotNull(store.loadErrors[store.historyFile])
+
+        val failure = runCatching { store.recordWatched(video(id = "abc", title = "Kotlin")) }.exceptionOrNull()
+        assertTrue(failure is IllegalStateException)
+        assertEquals("not-json", store.historyFile.toFile().readText())
+
+        store.clearHistory()
+        assertTrue(store.loadErrors.isEmpty())
+        assertEquals(listOf("abc"), store.recordWatched(video(id = "abc", title = "Kotlin")).map { it.id })
+    }
+
+    @Test
+    fun recordsHistoryNewestFirstWithoutDuplicates() {
+        val store = DesktopLibraryStore(temporaryFolder.root.toPath())
+        val first = video(id = "first", title = "First")
+        val second = video(id = "second", title = "Second")
+
+        store.recordWatched(first)
+        store.recordWatched(second)
+        val updated = store.recordWatched(first)
+
+        assertEquals(listOf("first", "second"), updated.map { it.id })
+        assertEquals(listOf("first", "second"), store.loadHistory().map { it.id })
+    }
+
+    @Test
+    fun togglesSubscriptionsAndPersistsPlaylists() {
+        val store = DesktopLibraryStore(temporaryFolder.root.toPath())
+        val subscribedVideo = video(id = "video", title = "Video", channelName = "Channel").copy(channelId = "UCchannel")
+
+        val subscribed = store.toggleSubscription(subscribedVideo)
+        assertEquals(listOf("UCchannel"), subscribed.map { it.channelId })
+        assertTrue(store.toggleSubscription(subscribedVideo).isEmpty())
+
+        store.addToPlaylist("Desktop", subscribedVideo)
+        val restored = DesktopLibraryStore(temporaryFolder.root.toPath()).loadPlaylists()
+        assertEquals("Desktop", restored.single().name)
+        assertEquals(
+            "video",
+            restored
+                .single()
+                .videos
+                .single()
+                .id,
+        )
+    }
+
+    @Test
+    fun recordsUniqueSearchHistory() {
+        val store = DesktopLibraryStore(temporaryFolder.root.toPath())
+
+        store.recordSearch("Kotlin")
+        store.recordSearch("Compose")
+        val history = store.recordSearch("kotlin")
+
+        assertEquals(listOf("kotlin", "Compose"), history)
+    }
+
     private fun video(
         id: String,
         title: String,
