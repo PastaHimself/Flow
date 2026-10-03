@@ -10,15 +10,10 @@ import java.text.BreakIterator
 import java.text.Normalizer
 import java.util.Locale
 
-/**
- * How the engine reads raw text before it becomes topics: styled letters fold to plain ones, short
- * topic names survive, and scripts written without spaces are split into words (#907).
- */
-internal object NeuroText {
-    /** Two-letter names that are whole topics. Everything else under three letters is noise. */
+/** Shared text normalization used by FlowNeuro and the desktop recommendation seed picker. */
+object NeuroText {
     val SHORT_TOPICS = setOf("ai", "ml", "2d", "3d", "4k", "8k", "f1", "pc", "tv", "vr", "ar", "dj", "ui", "ux", "ev", "rc", "uk")
 
-    // NFKC has no mapping for small capitals, a common way to style titles.
     private val SmallCaps =
         mapOf(
             'ᴀ' to 'a',
@@ -60,13 +55,10 @@ internal object NeuroText {
         )
 
     private val Whitespace = Regex("\\s+")
-
     private val wordBreaks = ThreadLocal.withInitial { BreakIterator.getWordInstance(Locale.ROOT) }
 
-    /** Lowercase plain letters: "𝙋𝙃𝙊𝙉𝙆", "ｐｈｏｎｋ", "ⓟⓗⓞⓝⓚ" and "ᴘʜᴏɴᴋ" all read "phonk". */
     fun fold(text: String): String {
         if (text.all { it.code < 0x80 }) return text.lowercase()
-        // NFKC splits Thai and Lao SARA AM into two characters no dictionary or title uses; put it back.
         val normalized =
             Normalizer
                 .normalize(text, Normalizer.Form.NFKC)
@@ -76,16 +68,11 @@ internal object NeuroText {
         return plain.lowercase()
     }
 
-    /**
-     * The words of folded text. Chinese, Japanese, Thai, Lao, Khmer and Burmese runs are split by the
-     * platform's dictionary word breaker, since those scripts put no spaces between words.
-     */
     fun words(folded: String): List<String> =
         folded.split(Whitespace).flatMap { chunk ->
             if (chunk.any(::isUnspaced)) segment(chunk) else listOf(chunk)
         }
 
-    /** A letter, digit or combining mark: the marks spell vowels and tones in Thai and Devanagari words. */
     fun isWordChar(c: Char): Boolean =
         c.isLetterOrDigit() ||
             when (Character.getType(c).toByte()) {
@@ -93,7 +80,6 @@ internal object NeuroText {
                 else -> false
             }
 
-    /** Long enough to be a topic: three letters, a known short name, or two characters of an unspaced script. */
     fun isTopicSized(word: String): Boolean =
         when {
             word.length >= 3 -> !isGrammarKana(word)
@@ -104,7 +90,6 @@ internal object NeuroText {
 
     private fun isUnspaced(c: Char): Boolean = !c.isWhitespace() && Character.UnicodeScript.of(c.code) in UnspacedScripts
 
-    // Hiragana-only words are almost always particles and inflections, not subjects.
     private fun isGrammarKana(word: String): Boolean = word.all { Character.UnicodeScript.of(it.code) == Character.UnicodeScript.HIRAGANA }
 
     private fun segment(chunk: String): List<String> {

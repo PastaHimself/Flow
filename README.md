@@ -193,6 +193,19 @@ Flow Nightly is built from every commit to `main`. It installs next to the stabl
 
 ### Requirements 
 **Minimum Requirement:** Android 8.0+
+
+### Linux (experimental)
+
+Flow now has an experimental Linux desktop build for **x86_64 / amd64**. GitHub Actions builds a Debian package named `Flow-<version>-amd64.deb`; install a downloaded release artifact with:
+
+```bash
+sudo apt install ./Flow-<version>-amd64.deb
+```
+
+The desktop MVP currently provides Home/discovery, YouTube search, video metadata and thumbnails, a local saved library, and desktop settings. Playback uses the system `mpv` player through its local IPC interface and requires `mpv` plus `yt-dlp` (or `youtube-dl`) to be installed; Flow shows playback as unavailable when those tools are missing. Android-only features such as Media3 integration, downloads, casting, widgets, notifications, CameraX, and WorkManager are not yet implemented on Linux.
+
+For a local package build, run `./gradlew :desktop:packageDeb`. Compose Desktop writes the package to `desktop/build/compose/binaries/main/deb/` (for example, `flow_2.2.1-1_amd64.deb`).
+
 <a id="cert"></a>
 ### Verifying Authenticity
 To ensure the authenticity of the APK and verify it has not been tampered with, you can check the signing certificate fingerprint using tools like [AppVerifier](https://github.com/soupslurpr/AppVerifier).

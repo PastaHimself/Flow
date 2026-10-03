@@ -18,3 +18,5 @@ dependencyResolutionManagement {
 rootProject.name = "Flow"
 include(":app")
 include(":benchmark")
+include(":shared")
+include(":desktop")

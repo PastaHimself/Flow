@@ -233,6 +233,8 @@ composeCompiler {
 }
 
 dependencies {
+    implementation(project(":shared"))
+
     // --- Core Android ---
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.core.splashscreen)

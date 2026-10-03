@@ -1,0 +1,95 @@
+name: Linux Desktop
+
+on:
+  push:
+    branches: [ '**' ]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: linux-desktop-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+
+jobs:
+  build-linux:
+    name: Build AMD64 DEB
+    if: ${{ github.repository == 'PastaHimself/Flow' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Verify repository safety
+        run: test "$GITHUB_REPOSITORY" = "PastaHimself/Flow"
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v6
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Verify Linux packaging tools
+        run: |
+          command -v fakeroot
+          command -v dpkg-deb
+          command -v jpackage
+
+      - name: Check Kotlin formatting
+        run: ./gradlew spotlessCheck --build-cache --stacktrace
+
+      - name: Compile and test desktop code
+        run: >
+          ./gradlew :shared:test :desktop:test :desktop:compileKotlin
+          --build-cache --stacktrace
+
+      - name: Build Debian package
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(sed -n 's/^flow.desktopVersion=//p' gradle.properties)
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            version="${GITHUB_REF_NAME#v}"
+          fi
+          if [[ ! "$version" =~ ^[0-9][0-9A-Za-z.+~-]*$ ]]; then
+            echo "::error::Invalid Debian upstream version '$version'."
+            exit 1
+          fi
+          ./gradlew :desktop:packageDeb -Pflow.desktopVersion="$version" --build-cache --stacktrace
+
+          shopt -s nullglob
+          packages=(desktop/build/compose/binaries/main/deb/*.deb)
+          if (( ${#packages[@]} != 1 )); then
+            echo "::error::Expected exactly one DEB, found ${#packages[@]}."
+            exit 1
+          fi
+
+          mkdir -p dist-linux
+          output="dist-linux/Flow-${version}-amd64.deb"
+          cp "${packages[0]}" "$output"
+          dpkg-deb --info "$output"
+          dpkg-deb --contents "$output" | grep -E '/flow-Flow\.desktop$'
+          echo "DEB_PATH=$output" >> "$GITHUB_ENV"
+
+      - name: Upload Linux DEB
+        uses: actions/upload-artifact@v7
+        with:
+          name: flow-linux-deb
+          path: ${{ env.DEB_PATH }}
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
