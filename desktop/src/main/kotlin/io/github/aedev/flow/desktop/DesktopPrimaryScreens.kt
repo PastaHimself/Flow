@@ -23,6 +23,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.github.aedev.flow.data.model.Video
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 @Composable
@@ -95,22 +97,33 @@ internal fun SearchScreen(
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var searchRequestId by remember { mutableStateOf(0L) }
+    var searchJob by remember { mutableStateOf<Job?>(null) }
 
     fun search() {
         val submittedQuery = query.trim()
         if (submittedQuery.isBlank()) return
         onSearch(submittedQuery)
+        searchJob?.cancel()
         val requestId = ++searchRequestId
         loading = true
         error = null
-        scope.launch {
-            val outcome = runCatching { repository.searchVideos(submittedQuery) }
-            if (requestId != searchRequestId) return@launch
-            outcome
-                .onSuccess { results = it }
-                .onFailure { error = it.message ?: it.javaClass.simpleName }
-            loading = false
-        }
+        searchJob =
+            scope.launch {
+                val outcome =
+                    try {
+                        Result.success(repository.searchVideos(submittedQuery))
+                    } catch (cancellation: CancellationException) {
+                        throw cancellation
+                    } catch (failure: Throwable) {
+                        Result.failure(failure)
+                    }
+                if (requestId != searchRequestId) return@launch
+                outcome
+                    .onSuccess { results = it }
+                    .onFailure { error = it.message ?: it.javaClass.simpleName }
+                loading = false
+                searchJob = null
+            }
     }
 
     ScreenColumn(title = "Search", subtitle = "Search YouTube without an account") {
@@ -122,6 +135,8 @@ internal fun SearchScreen(
             OutlinedTextField(
                 value = query,
                 onValueChange = { value ->
+                    searchJob?.cancel()
+                    searchJob = null
                     query = value
                     searchRequestId++
                     loading = false

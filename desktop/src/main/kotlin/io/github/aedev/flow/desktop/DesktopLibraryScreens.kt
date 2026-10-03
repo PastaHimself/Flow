@@ -23,19 +23,19 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.github.aedev.flow.data.model.Video
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.nio.file.Files
 import java.nio.file.Path
@@ -178,49 +178,32 @@ internal fun SubscriptionsScreen(
     onToggleSaved: (Video) -> Unit,
     onDownload: (Video) -> Unit,
     onToggleSubscription: (Video) -> Unit,
+    onRemoveSubscription: (String) -> Unit,
 ) {
     var videos by remember { mutableStateOf(emptyList<Video>()) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var partialFailures by remember { mutableStateOf(emptyList<String>()) }
     var reload by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(subscriptions, reload) {
         if (subscriptions.isEmpty()) {
             videos = emptyList()
+            loading = false
+            error = null
+            partialFailures = emptyList()
             return@LaunchedEffect
         }
         loading = true
         error = null
+        partialFailures = emptyList()
         try {
-            videos =
-                coroutineScope {
-                    val outcomes = mutableListOf<Result<List<Video>>>()
-                    subscriptions
-                        .chunked(MAX_CONCURRENT_CHANNEL_FETCHES)
-                        .forEach { batch ->
-                            outcomes +=
-                                batch
-                                    .map { subscription ->
-                                        async {
-                                            try {
-                                                Result.success(repository.channelVideos(subscription.channelId, VIDEOS_PER_CHANNEL))
-                                            } catch (cancellation: CancellationException) {
-                                                throw cancellation
-                                            } catch (failure: Throwable) {
-                                                Result.failure(failure)
-                                            }
-                                        }
-                                    }.awaitAll()
-                        }
-                    if (outcomes.isNotEmpty() && outcomes.all { it.isFailure }) {
-                        throw outcomes.firstNotNullOf { it.exceptionOrNull() }
-                    }
-                    outcomes
-                        .mapNotNull { it.getOrNull() }
-                        .flatten()
-                        .distinctBy(Video::id)
-                        .sortedByDescending(Video::timestamp)
+            val result =
+                loadSubscriptionFeed(subscriptions) { subscription ->
+                    repository.channelVideos(subscription.channelId, VIDEOS_PER_CHANNEL)
                 }
+            videos = result.videos
+            partialFailures = result.failedChannelNames
         } catch (cancellation: CancellationException) {
             throw cancellation
         } catch (failure: Throwable) {
@@ -231,33 +214,56 @@ internal fun SubscriptionsScreen(
     }
 
     ScreenColumn(title = "Subscriptions", subtitle = "Latest videos from locally followed channels") {
-        when {
-            subscriptions.isEmpty() -> {
-                EmptyState("Subscribe to channels from Home or Search.")
+        Column(modifier = Modifier.fillMaxSize()) {
+            if (subscriptions.isNotEmpty()) {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    items(subscriptions, key = DesktopSubscription::channelId) { subscription ->
+                        TextButton(onClick = { onRemoveSubscription(subscription.channelId) }) {
+                            Text("${subscription.channelName} · Unfollow")
+                        }
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
             }
-
-            loading -> {
-                LoadingState()
+            if (partialFailures.isNotEmpty()) {
+                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    Text(
+                        "Could not refresh ${partialFailures.size} subscription${if (partialFailures.size == 1) "" else "s"}.",
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.weight(1f),
+                    )
+                    TextButton(onClick = { reload++ }) { Text("Retry") }
+                }
+                Spacer(Modifier.height(8.dp))
             }
+            when {
+                subscriptions.isEmpty() -> {
+                    EmptyState("Subscribe to channels from Home or Search.")
+                }
 
-            error != null -> {
-                ErrorState(error!!, onRetry = { reload++ })
-            }
+                loading -> {
+                    LoadingState()
+                }
 
-            videos.isEmpty() -> {
-                EmptyState("No subscription videos were returned.")
-            }
+                error != null -> {
+                    ErrorState(error!!, onRetry = { reload++ })
+                }
 
-            else -> {
-                VideoList(
-                    videos = videos,
-                    savedIds = savedIds,
-                    onPlay = onPlay,
-                    onToggleSaved = onToggleSaved,
-                    subscribedChannelIds = subscribedIds,
-                    onDownload = onDownload,
-                    onToggleSubscription = onToggleSubscription,
-                )
+                videos.isEmpty() -> {
+                    EmptyState("No subscription videos were returned.")
+                }
+
+                else -> {
+                    VideoList(
+                        videos = videos,
+                        savedIds = savedIds,
+                        onPlay = onPlay,
+                        onToggleSaved = onToggleSaved,
+                        subscribedChannelIds = subscribedIds,
+                        onDownload = onDownload,
+                        onToggleSubscription = onToggleSubscription,
+                    )
+                }
             }
         }
     }
@@ -271,23 +277,21 @@ internal fun DownloadsScreen(
 ) {
     var files by remember { mutableStateOf(emptyList<Path>()) }
     var refresh by remember { mutableIntStateOf(0) }
-    var folderError by remember { mutableStateOf<String?>(null) }
+    var actionError by remember { mutableStateOf<String?>(null) }
+    var listingError by remember { mutableStateOf<String?>(null) }
+    val activeDownloads by downloader.activeDownloads.collectAsState()
+    val scope = rememberCoroutineScope()
 
-    LaunchedEffect(refresh, downloader.directory) {
-        files =
-            withContext(Dispatchers.IO) {
-                runCatching {
-                    if (!Files.isDirectory(downloader.directory)) return@runCatching emptyList()
-                    Files.list(downloader.directory).use { stream ->
-                        stream
-                            .filter(Files::isRegularFile)
-                            .toList()
-                            .sortedByDescending { path ->
-                                runCatching { Files.getLastModifiedTime(path).toMillis() }.getOrDefault(0L)
-                            }
-                    }
-                }.getOrDefault(emptyList())
-            }
+    LaunchedEffect(refresh, downloader.directory, activeDownloads) {
+        try {
+            files = withContext(Dispatchers.IO) { downloader.listDownloadedFiles() }
+            listingError = null
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (failure: Throwable) {
+            files = emptyList()
+            listingError = failure.message ?: failure.javaClass.simpleName
+        }
     }
 
     ScreenColumn(title = "Downloads", subtitle = downloader.directory.toString()) {
@@ -297,26 +301,38 @@ internal fun DownloadsScreen(
                 Button(onClick = onOpenLocalFile) { Text("Open local media") }
                 Button(
                     onClick = {
-                        folderError =
+                        actionError =
                             runCatching {
                                 Files.createDirectories(downloader.directory)
                                 openPath(downloader.directory).getOrThrow()
-                            }.exceptionOrNull()?.let { it.message ?: it.javaClass.simpleName }
+                            }.exceptionOrNull()?.let {
+                                "Could not open downloads folder: ${it.message ?: it.javaClass.simpleName}"
+                            }
                     },
                 ) {
                     Icon(Icons.Default.FolderOpen, contentDescription = null)
                     Text(" Open folder")
                 }
             }
-            folderError?.let { message ->
+            actionError?.let { message ->
                 Text(
-                    "Could not open downloads folder: $message",
+                    message,
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(top = 8.dp),
                 )
             }
+            if (activeDownloads.isNotEmpty()) {
+                Spacer(Modifier.height(12.dp))
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    items(activeDownloads.entries.toList(), key = { it.key }) { (videoId, title) ->
+                        TextButton(onClick = { downloader.cancel(videoId) }) { Text("Cancel $title", maxLines = 1) }
+                    }
+                }
+            }
             Spacer(Modifier.height(16.dp))
-            if (files.isEmpty()) {
+            if (listingError != null) {
+                ErrorState("Could not read downloads folder: $listingError", onRetry = { refresh++ })
+            } else if (files.isEmpty()) {
                 EmptyState("Downloaded videos will appear here.")
             } else {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxSize()) {
@@ -325,6 +341,21 @@ internal fun DownloadsScreen(
                             Row(modifier = Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Text(file.name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
                                 TextButton(onClick = { onPlayFile(file) }) { Text("Play") }
+                                TextButton(
+                                    onClick = {
+                                        scope.launch {
+                                            try {
+                                                withContext(Dispatchers.IO) { downloader.delete(file) }
+                                                actionError = null
+                                                refresh++
+                                            } catch (cancellation: CancellationException) {
+                                                throw cancellation
+                                            } catch (failure: Throwable) {
+                                                actionError = "Could not delete ${file.name}: ${failure.message}"
+                                            }
+                                        }
+                                    },
+                                ) { Text("Delete") }
                             }
                         }
                     }
@@ -342,5 +373,4 @@ private enum class LibrarySection(
     PLAYLISTS("Playlists"),
 }
 
-private const val MAX_CONCURRENT_CHANNEL_FETCHES = 3
 private const val VIDEOS_PER_CHANNEL = 8

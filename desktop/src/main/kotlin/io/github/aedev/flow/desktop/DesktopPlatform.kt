@@ -1,5 +1,10 @@
 package io.github.aedev.flow.desktop
 
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.runInterruptible
 import java.awt.Desktop
 import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
@@ -8,7 +13,6 @@ import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 
 internal data class ProcessResult(
@@ -26,33 +30,46 @@ internal fun findExecutable(
         .asSequence()
         .filter(String::isNotBlank)
         .map { directory -> Path.of(directory, name) }
-        .firstOrNull(Files::isExecutable)
+        .firstOrNull { candidate -> Files.isRegularFile(candidate) && Files.isExecutable(candidate) }
 
-internal fun runProcess(
+internal suspend fun runProcess(
     command: List<String>,
     timeout: Duration = Duration.ofSeconds(45),
-): ProcessResult {
-    require(command.isNotEmpty())
-    val process = ProcessBuilder(command).start()
-    val stdout = CompletableFuture.supplyAsync { process.inputStream.bufferedReader().use { it.readText() } }
-    val stderr = CompletableFuture.supplyAsync { process.errorStream.bufferedReader().use { it.readText() } }
-    if (!process.waitFor(timeout.toMillis(), TimeUnit.MILLISECONDS)) {
-        process.destroy()
-        if (!process.waitFor(2, TimeUnit.SECONDS)) process.destroyForcibly()
-        throw IllegalStateException("Timed out running ${command.first()}")
+): ProcessResult =
+    coroutineScope {
+        require(command.isNotEmpty())
+        val process = ProcessBuilder(command).start()
+        val stdout = async(Dispatchers.IO) { process.inputStream.bufferedReader().use { it.readText() } }
+        val stderr = async(Dispatchers.IO) { process.errorStream.bufferedReader().use { it.readText() } }
+        try {
+            val finished =
+                runInterruptible(Dispatchers.IO) {
+                    process.waitFor(timeout.toMillis(), TimeUnit.MILLISECONDS)
+                }
+            if (!finished) throw IllegalStateException("Timed out running ${command.first()}")
+            ProcessResult(
+                exitCode = process.exitValue(),
+                stdout = stdout.await(),
+                stderr = stderr.await(),
+            )
+        } finally {
+            if (process.isAlive) terminateProcessTree(process)
+        }
     }
-    return ProcessResult(
-        exitCode = process.exitValue(),
-        stdout = stdout.get(2, TimeUnit.SECONDS),
-        stderr = stderr.get(2, TimeUnit.SECONDS),
-    )
+
+internal fun terminateProcessTree(process: Process) {
+    val descendants = process.descendants().toList().asReversed()
+    descendants.forEach { child -> runCatching { child.destroy() } }
+    runCatching { process.destroy() }
+    descendants.filter(ProcessHandle::isAlive).forEach { child -> runCatching { child.destroyForcibly() } }
+    if (process.isAlive) runCatching { process.destroyForcibly() }
 }
 
 internal fun defaultDataDirectory(
     home: String = System.getProperty("user.home"),
     xdgDataHome: String? = System.getenv("XDG_DATA_HOME"),
 ): Path {
-    val base = xdgDataHome?.takeIf(String::isNotBlank)?.let(Path::of) ?: Path.of(home, ".local", "share")
+    val base = absoluteXdgPath(xdgDataHome) ?: Path.of(home, ".local", "share")
     return base.resolve("flow")
 }
 
@@ -60,17 +77,22 @@ internal fun defaultCacheDirectory(
     home: String = System.getProperty("user.home"),
     xdgCacheHome: String? = System.getenv("XDG_CACHE_HOME"),
 ): Path {
-    val base = xdgCacheHome?.takeIf(String::isNotBlank)?.let(Path::of) ?: Path.of(home, ".cache")
+    val base = absoluteXdgPath(xdgCacheHome) ?: Path.of(home, ".cache")
     return base.resolve("flow")
 }
 
 internal fun defaultDownloadDirectory(
     home: String = System.getProperty("user.home"),
     xdgConfigHome: String? = System.getenv("XDG_CONFIG_HOME"),
+    xdgDownloadDir: String? = System.getenv("XDG_DOWNLOAD_DIR"),
 ): Path {
-    val configured = System.getenv("XDG_DOWNLOAD_DIR")?.takeIf(String::isNotBlank)?.let(Path::of)
+    val configured =
+        xdgDownloadDir
+            ?.takeIf(String::isNotBlank)
+            ?.replace("${'$'}HOME", home)
+            ?.let(::absoluteXdgPath)
     if (configured != null) return configured
-    val configHome = xdgConfigHome?.takeIf(String::isNotBlank)?.let(Path::of) ?: Path.of(home, ".config")
+    val configHome = absoluteXdgPath(xdgConfigHome) ?: Path.of(home, ".config")
     val userDirs = configHome.resolve("user-dirs.dirs")
     val value =
         runCatching {
@@ -83,10 +105,25 @@ internal fun defaultDownloadDirectory(
         }.getOrNull()
     if (!value.isNullOrBlank()) {
         val expanded = value.replace("${'$'}HOME", home)
-        return Path.of(expanded)
+        absoluteXdgPath(expanded)?.let { return it }
     }
     return Path.of(home, "Downloads")
 }
+
+private fun absoluteXdgPath(value: String?): Path? =
+    value
+        ?.takeIf(String::isNotBlank)
+        ?.let(Path::of)
+        ?.takeIf(Path::isAbsolute)
+
+internal suspend fun <T> runCatchingCancellable(block: suspend () -> T): Result<T> =
+    try {
+        Result.success(block())
+    } catch (cancellation: CancellationException) {
+        throw cancellation
+    } catch (failure: Throwable) {
+        Result.failure(failure)
+    }
 
 internal fun openExternalUrl(url: String): Result<Unit> =
     openWithDesktopOrXdg(

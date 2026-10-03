@@ -1,6 +1,10 @@
 package io.github.aedev.flow.desktop
 
 import io.github.aedev.flow.data.model.Video
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -25,6 +29,19 @@ class DesktopLibraryStoreTest {
         assertEquals(video.title, restored.single().title)
         assertTrue(store.file.toFile().isFile)
     }
+
+    @Test
+    fun concurrentLibraryMutationsDoNotLoseSavedVideos() =
+        runBlocking {
+            val store = DesktopLibraryStore(temporaryFolder.root.toPath())
+            val videos = (1..16).map { index -> video(id = "video-$index", title = "Video $index") }
+
+            videos
+                .map { item -> async(Dispatchers.IO) { store.toggleSaved(item) } }
+                .awaitAll()
+
+            assertEquals(videos.map(Video::id).toSet(), store.load().map(Video::id).toSet())
+        }
 
     @Test
     fun recommendationQueryUsesSharedFlowNeuroTextNormalization() {
@@ -106,6 +123,9 @@ class DesktopLibraryStoreTest {
         val subscribed = store.toggleSubscription(subscribedVideo)
         assertEquals(listOf("UCchannel"), subscribed.map { it.channelId })
         assertTrue(store.toggleSubscription(subscribedVideo).isEmpty())
+
+        store.toggleSubscription(subscribedVideo)
+        assertTrue(store.removeSubscription("UCchannel").isEmpty())
 
         store.addToPlaylist("Desktop", subscribedVideo)
         val restored = DesktopLibraryStore(temporaryFolder.root.toPath()).loadPlaylists()

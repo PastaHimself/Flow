@@ -1,6 +1,7 @@
 package io.github.aedev.flow.desktop
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -53,6 +54,7 @@ import androidx.compose.ui.window.rememberTrayState
 import io.github.aedev.flow.data.model.Video
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.awt.FileDialog
@@ -128,6 +130,7 @@ private fun FlowDesktopApp(onNotify: (String, String) -> Unit) {
     var searchHistory by remember { mutableStateOf(libraryStore.loadSearchHistory()) }
     var currentVideo by remember { mutableStateOf<Video?>(null) }
     var playerPaused by remember { mutableStateOf(false) }
+    var pendingPlayback by remember { mutableStateOf<Pair<String, Video>?>(null) }
     var playlistTarget by remember { mutableStateOf<Video?>(null) }
     var playlistName by remember { mutableStateOf("My playlist") }
     var statusMessage by remember {
@@ -146,22 +149,24 @@ private fun FlowDesktopApp(onNotify: (String, String) -> Unit) {
     val subscribedIds = subscriptions.mapTo(hashSetOf(), DesktopSubscription::channelId)
 
     fun toggleSaved(video: Video) {
-        val updatedVideos =
-            if (savedVideos.any { it.id == video.id }) {
-                savedVideos.filterNot { it.id == video.id }
-            } else {
-                listOf(video) + savedVideos
-            }
         scope.launch {
-            runCatching { withContext(Dispatchers.IO) { libraryStore.save(updatedVideos) } }
-                .onSuccess { savedVideos = updatedVideos }
+            runCatchingCancellable { withContext(Dispatchers.IO) { libraryStore.toggleSaved(video) } }
+                .onSuccess { savedVideos = it }
                 .onFailure { statusMessage = "Could not save library: ${it.message}" }
         }
     }
 
     fun toggleSubscription(video: Video) {
         scope.launch {
-            runCatching { withContext(Dispatchers.IO) { libraryStore.toggleSubscription(video) } }
+            runCatchingCancellable { withContext(Dispatchers.IO) { libraryStore.toggleSubscription(video) } }
+                .onSuccess { subscriptions = it }
+                .onFailure { statusMessage = "Could not update subscription: ${it.message}" }
+        }
+    }
+
+    fun removeSubscription(channelId: String) {
+        scope.launch {
+            runCatchingCancellable { withContext(Dispatchers.IO) { libraryStore.removeSubscription(channelId) } }
                 .onSuccess { subscriptions = it }
                 .onFailure { statusMessage = "Could not update subscription: ${it.message}" }
         }
@@ -172,16 +177,22 @@ private fun FlowDesktopApp(onNotify: (String, String) -> Unit) {
             statusMessage = downloader.unavailableReason
             return
         }
+        if (downloader.isDownloading(video.id)) {
+            statusMessage = "${video.title} is already downloading."
+            return
+        }
         statusMessage = "Downloading ${video.title}…"
         scope.launch {
-            runCatching { downloader.download(video) }
-                .onSuccess { path ->
-                    statusMessage = "Downloaded to $path"
-                    onNotify("Download complete", video.title)
-                }.onFailure { failure ->
-                    statusMessage = "Download failed: ${failure.message}"
-                    onNotify("Download failed", video.title)
-                }
+            try {
+                val path = downloader.download(video)
+                statusMessage = "Downloaded to $path"
+                onNotify("Download complete", video.title)
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (failure: Throwable) {
+                statusMessage = "Download failed: ${failure.message}"
+                onNotify("Download failed", video.title)
+            }
         }
     }
 
@@ -201,19 +212,17 @@ private fun FlowDesktopApp(onNotify: (String, String) -> Unit) {
             statusMessage = player.youtubeUnavailableReason
             return
         }
+        val mediaUrl = "https://www.youtube.com/watch?v=${video.id}"
+        pendingPlayback = mediaUrl to video
         scope.launch {
-            val error =
-                withContext(Dispatchers.IO) {
-                    runCatching { player.play("https://www.youtube.com/watch?v=${video.id}") }.exceptionOrNull()
-                }
-            if (error != null) {
-                statusMessage = "Playback failed: ${error.message}"
-            } else {
-                currentVideo = video
-                playerPaused = false
-                runCatching { withContext(Dispatchers.IO) { libraryStore.recordWatched(video) } }
-                    .onSuccess { history = it }
-                    .onFailure { statusMessage = "Could not update history: ${it.message}" }
+            try {
+                withContext(Dispatchers.IO) { player.play(mediaUrl) }
+            } catch (cancellation: CancellationException) {
+                if (pendingPlayback?.first == mediaUrl) pendingPlayback = null
+                throw cancellation
+            } catch (failure: Throwable) {
+                if (pendingPlayback?.first == mediaUrl) pendingPlayback = null
+                statusMessage = "Playback failed: ${failure.message}"
             }
         }
     }
@@ -223,22 +232,58 @@ private fun FlowDesktopApp(onNotify: (String, String) -> Unit) {
             statusMessage = player.unavailableReason
             return
         }
+        val mediaUrl = path.toAbsolutePath().toString()
+        val localVideo =
+            Video(
+                id = "local:${path.toAbsolutePath()}",
+                title = path.fileName.toString(),
+                channelName = "Local media",
+                channelId = "local",
+                thumbnailUrl = "",
+                duration = 0,
+                viewCount = 0,
+                uploadDate = "",
+            )
+        pendingPlayback = mediaUrl to localVideo
         scope.launch {
-            runCatching { withContext(Dispatchers.IO) { player.play(path.toAbsolutePath().toString()) } }
-                .onSuccess {
-                    currentVideo =
-                        Video(
-                            id = "local:${path.toAbsolutePath()}",
-                            title = path.fileName.toString(),
-                            channelName = "Local media",
-                            channelId = "local",
-                            thumbnailUrl = "",
-                            duration = 0,
-                            viewCount = 0,
-                            uploadDate = "",
-                        )
-                    playerPaused = false
-                }.onFailure { statusMessage = "Playback failed: ${it.message}" }
+            try {
+                withContext(Dispatchers.IO) { player.play(mediaUrl) }
+            } catch (cancellation: CancellationException) {
+                if (pendingPlayback?.first == mediaUrl) pendingPlayback = null
+                throw cancellation
+            } catch (failure: Throwable) {
+                if (pendingPlayback?.first == mediaUrl) pendingPlayback = null
+                statusMessage = "Playback failed: ${failure.message}"
+            }
+        }
+    }
+
+    LaunchedEffect(player) {
+        var handledLoadGeneration = player.playbackState.value.loadGeneration
+        player.playbackState.collect { state ->
+            playerPaused = state.paused
+            state.error?.let { statusMessage = "Playback failed: $it" }
+
+            if (state.loadGeneration != handledLoadGeneration) {
+                handledLoadGeneration = state.loadGeneration
+                val loaded = pendingPlayback?.takeIf { it.first == state.lastLoadedMediaUrl }
+                if (loaded != null) {
+                    if (state.mediaUrl == state.lastLoadedMediaUrl) currentVideo = loaded.second
+                    pendingPlayback = null
+                    if (loaded.second.channelId != "local") {
+                        try {
+                            history = withContext(Dispatchers.IO) { libraryStore.recordWatched(loaded.second) }
+                        } catch (cancellation: CancellationException) {
+                            throw cancellation
+                        } catch (failure: Throwable) {
+                            statusMessage = "Could not update history: ${failure.message}"
+                        }
+                    }
+                }
+            }
+
+            if (state.mediaUrl == null) currentVideo = null
+            if (state.mediaUrl == null && state.loadingMediaUrl == null) pendingPlayback = null
         }
     }
 
@@ -279,7 +324,7 @@ private fun FlowDesktopApp(onNotify: (String, String) -> Unit) {
                         val name = playlistName
                         playlistTarget = null
                         scope.launch {
-                            runCatching { withContext(Dispatchers.IO) { libraryStore.addToPlaylist(name, target) } }
+                            runCatchingCancellable { withContext(Dispatchers.IO) { libraryStore.addToPlaylist(name, target) } }
                                 .onSuccess {
                                     playlists = it
                                     statusMessage = "Added to $name."
@@ -348,112 +393,149 @@ private fun FlowDesktopApp(onNotify: (String, String) -> Unit) {
                     }
                 }
 
-                when (destination) {
-                    Destination.HOME -> {
-                        HomeScreen(
-                            videos = homeVideos,
-                            loading = homeLoading,
-                            error = homeError,
-                            savedIds = savedIds,
-                            subscribedIds = subscribedIds,
-                            recommendationQuery = recommendationQuery,
-                            onRetry = { homeReloadKey++ },
-                            onPlay = ::play,
-                            onToggleSaved = ::toggleSaved,
-                            onDownload = ::download,
-                            onToggleSubscription = ::toggleSubscription,
-                            onCopyLink = ::copyLink,
-                            onAddToPlaylist = ::addToPlaylist,
-                        )
-                    }
+                Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                    when (destination) {
+                        Destination.HOME -> {
+                            HomeScreen(
+                                videos = homeVideos,
+                                loading = homeLoading,
+                                error = homeError,
+                                savedIds = savedIds,
+                                subscribedIds = subscribedIds,
+                                recommendationQuery = recommendationQuery,
+                                onRetry = { homeReloadKey++ },
+                                onPlay = ::play,
+                                onToggleSaved = ::toggleSaved,
+                                onDownload = ::download,
+                                onToggleSubscription = ::toggleSubscription,
+                                onCopyLink = ::copyLink,
+                                onAddToPlaylist = ::addToPlaylist,
+                            )
+                        }
 
-                    Destination.SEARCH -> {
-                        SearchScreen(
-                            repository = repository,
-                            savedIds = savedIds,
-                            subscribedIds = subscribedIds,
-                            searchHistory = searchHistory,
-                            onSearch = { query ->
-                                scope.launch {
-                                    runCatching { withContext(Dispatchers.IO) { libraryStore.recordSearch(query) } }
-                                        .onSuccess { searchHistory = it }
-                                        .onFailure { statusMessage = "Could not update search history: ${it.message}" }
-                                }
-                            },
-                            onPlay = ::play,
-                            onToggleSaved = ::toggleSaved,
-                            onDownload = ::download,
-                            onToggleSubscription = ::toggleSubscription,
-                            onCopyLink = ::copyLink,
-                            onAddToPlaylist = ::addToPlaylist,
-                        )
-                    }
+                        Destination.SEARCH -> {
+                            SearchScreen(
+                                repository = repository,
+                                savedIds = savedIds,
+                                subscribedIds = subscribedIds,
+                                searchHistory = searchHistory,
+                                onSearch = { query ->
+                                    scope.launch {
+                                        runCatchingCancellable { withContext(Dispatchers.IO) { libraryStore.recordSearch(query) } }
+                                            .onSuccess { searchHistory = it }
+                                            .onFailure { statusMessage = "Could not update search history: ${it.message}" }
+                                    }
+                                },
+                                onPlay = ::play,
+                                onToggleSaved = ::toggleSaved,
+                                onDownload = ::download,
+                                onToggleSubscription = ::toggleSubscription,
+                                onCopyLink = ::copyLink,
+                                onAddToPlaylist = ::addToPlaylist,
+                            )
+                        }
 
-                    Destination.SUBSCRIPTIONS -> {
-                        SubscriptionsScreen(
-                            subscriptions = subscriptions,
-                            repository = repository,
-                            savedIds = savedIds,
-                            subscribedIds = subscribedIds,
-                            onPlay = ::play,
-                            onToggleSaved = ::toggleSaved,
-                            onDownload = ::download,
-                            onToggleSubscription = ::toggleSubscription,
-                        )
-                    }
+                        Destination.SUBSCRIPTIONS -> {
+                            SubscriptionsScreen(
+                                subscriptions = subscriptions,
+                                repository = repository,
+                                savedIds = savedIds,
+                                subscribedIds = subscribedIds,
+                                onPlay = ::play,
+                                onToggleSaved = ::toggleSaved,
+                                onDownload = ::download,
+                                onToggleSubscription = ::toggleSubscription,
+                                onRemoveSubscription = ::removeSubscription,
+                            )
+                        }
 
-                    Destination.LIBRARY -> {
-                        LibraryScreen(
-                            savedVideos = savedVideos,
-                            history = history,
-                            playlists = playlists,
-                            savedIds = savedIds,
-                            subscribedIds = subscribedIds,
-                            onPlay = ::play,
-                            onToggleSaved = ::toggleSaved,
-                            onDownload = ::download,
-                            onToggleSubscription = ::toggleSubscription,
-                            onClearHistory = {
-                                scope.launch {
-                                    runCatching { withContext(Dispatchers.IO) { libraryStore.clearHistory() } }
-                                        .onSuccess { history = emptyList() }
-                                        .onFailure { statusMessage = "Could not clear history: ${it.message}" }
-                                }
-                            },
-                            onRemovePlaylist = { name ->
-                                scope.launch {
-                                    runCatching { withContext(Dispatchers.IO) { libraryStore.removePlaylist(name) } }
-                                        .onSuccess { playlists = it }
-                                        .onFailure { statusMessage = "Could not remove playlist: ${it.message}" }
-                                }
-                            },
-                        )
-                    }
+                        Destination.LIBRARY -> {
+                            LibraryScreen(
+                                savedVideos = savedVideos,
+                                history = history,
+                                playlists = playlists,
+                                savedIds = savedIds,
+                                subscribedIds = subscribedIds,
+                                onPlay = ::play,
+                                onToggleSaved = ::toggleSaved,
+                                onDownload = ::download,
+                                onToggleSubscription = ::toggleSubscription,
+                                onClearHistory = {
+                                    scope.launch {
+                                        runCatchingCancellable { withContext(Dispatchers.IO) { libraryStore.clearHistory() } }
+                                            .onSuccess { history = emptyList() }
+                                            .onFailure { statusMessage = "Could not clear history: ${it.message}" }
+                                    }
+                                },
+                                onRemovePlaylist = { name ->
+                                    scope.launch {
+                                        runCatchingCancellable { withContext(Dispatchers.IO) { libraryStore.removePlaylist(name) } }
+                                            .onSuccess { playlists = it }
+                                            .onFailure { statusMessage = "Could not remove playlist: ${it.message}" }
+                                    }
+                                },
+                            )
+                        }
 
-                    Destination.DOWNLOADS -> {
-                        DownloadsScreen(
-                            downloader = downloader,
-                            onPlayFile = ::playFile,
-                            onOpenLocalFile = { pickMediaFile()?.let(::playFile) },
-                        )
-                    }
+                        Destination.DOWNLOADS -> {
+                            DownloadsScreen(
+                                downloader = downloader,
+                                onPlayFile = ::playFile,
+                                onOpenLocalFile = { pickMediaFile()?.let(::playFile) },
+                            )
+                        }
 
-                    Destination.SETTINGS -> {
-                        SettingsScreen(player = player, repository = repository, downloader = downloader, libraryStore = libraryStore)
+                        Destination.SETTINGS -> {
+                            SettingsScreen(player = player, repository = repository, downloader = downloader, libraryStore = libraryStore)
+                        }
                     }
                 }
                 DesktopPlayerBar(
                     video = currentVideo,
-                    player = player,
                     paused = playerPaused,
+                    onSeekBack = {
+                        scope.launch {
+                            try {
+                                withContext(Dispatchers.IO) { player.seekBy(-10.0) }
+                            } catch (cancellation: CancellationException) {
+                                throw cancellation
+                            } catch (failure: Throwable) {
+                                statusMessage = "Playback failed: ${failure.message}"
+                            }
+                        }
+                    },
                     onPauseToggle = {
-                        player.togglePause()
-                        playerPaused = player.paused
+                        scope.launch {
+                            try {
+                                withContext(Dispatchers.IO) { player.togglePause() }
+                            } catch (cancellation: CancellationException) {
+                                throw cancellation
+                            } catch (failure: Throwable) {
+                                statusMessage = "Playback failed: ${failure.message}"
+                            }
+                        }
+                    },
+                    onSeekForward = {
+                        scope.launch {
+                            try {
+                                withContext(Dispatchers.IO) { player.seekBy(10.0) }
+                            } catch (cancellation: CancellationException) {
+                                throw cancellation
+                            } catch (failure: Throwable) {
+                                statusMessage = "Playback failed: ${failure.message}"
+                            }
+                        }
                     },
                     onStop = {
-                        player.stop()
-                        currentVideo = null
-                        playerPaused = false
+                        scope.launch {
+                            try {
+                                withContext(Dispatchers.IO) { player.stop() }
+                            } catch (cancellation: CancellationException) {
+                                throw cancellation
+                            } catch (failure: Throwable) {
+                                statusMessage = "Playback failed: ${failure.message}"
+                            }
+                        }
                     },
                 )
             }

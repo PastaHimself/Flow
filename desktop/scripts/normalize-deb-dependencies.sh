@@ -44,7 +44,63 @@ has_dependency() {
     grep -Fx "$package" >/dev/null
 }
 
-depends=$(sed -n 's/^Depends:[[:space:]]*//p' "$control")
+dependency_name() {
+  local dependency
+  dependency=$(trim "$1")
+  dependency=$(printf '%s' "$dependency" | sed -E 's/[[:space:]]*\([^)]*\)[[:space:]]*$//')
+  trim "$dependency"
+}
+
+normalize_dependency_group() {
+  local group=$1
+  local primary=$2
+  local alternate=$3
+  local canonical=$4
+  local matched=0
+  local normalized=$canonical
+  local raw_alternative alternative name
+  local alternatives=()
+  local kept=()
+
+  IFS='|' read -ra alternatives <<< "$group"
+  for raw_alternative in "${alternatives[@]}"; do
+    alternative=$(trim "$raw_alternative")
+    name=$(dependency_name "$alternative")
+    if [[ "$name" == "$primary" || "$name" == "$alternate" ]]; then
+      matched=1
+    else
+      kept+=("$alternative")
+    fi
+  done
+
+  if [[ "$matched" -eq 0 ]]; then
+    printf '%s' "$group"
+    return
+  fi
+
+  for alternative in "${kept[@]}"; do
+    normalized="$normalized | $alternative"
+  done
+  printf '%s' "$normalized"
+}
+
+depends=$(
+  awk '
+    /^Depends:/ {
+      in_depends = 1
+      sub(/^Depends:[[:space:]]*/, "")
+      printf "%s", $0
+      next
+    }
+    in_depends && /^[[:space:]]/ {
+      line = $0
+      sub(/^[[:space:]]+/, "", line)
+      printf " %s", line
+      next
+    }
+    in_depends { exit }
+  ' "$control"
+)
 if ! has_dependency "$depends" "libasound2t64" && ! has_dependency "$depends" "libasound2"; then
   echo "Compose-generated DEB is missing the expected libasound2 dependency" >&2
   exit 1
@@ -61,11 +117,8 @@ normalized_depends=""
 IFS=',' read -ra dependency_groups <<< "$depends"
 for raw_group in "${dependency_groups[@]}"; do
   group=$(trim "$raw_group")
-  if has_dependency "$group" "libasound2t64" || has_dependency "$group" "libasound2"; then
-    group="libasound2t64 | libasound2"
-  elif has_dependency "$group" "libpng16-16t64" || has_dependency "$group" "libpng16-16"; then
-    group="libpng16-16t64 | libpng16-16"
-  fi
+  group=$(normalize_dependency_group "$group" "libasound2t64" "libasound2" "libasound2t64 | libasound2")
+  group=$(normalize_dependency_group "$group" "libpng16-16t64" "libpng16-16" "libpng16-16t64 | libpng16-16")
   normalized_depends="${normalized_depends:+$normalized_depends, }$group"
 done
 
@@ -83,8 +136,16 @@ for required_dependency in libasound2t64 libasound2 libpng16-16t64 libpng16-16 m
 done
 
 awk -v dependencies="$normalized_depends" '
-  /^Depends:/ { print "Depends: " dependencies; next }
-  { print }
+  /^Depends:/ {
+    print "Depends: " dependencies
+    in_depends = 1
+    next
+  }
+  in_depends && /^[[:space:]]/ { next }
+  {
+    in_depends = 0
+    print
+  }
 ' "$control" > "$control.tmp"
 mv "$control.tmp" "$control"
 

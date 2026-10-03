@@ -49,6 +49,9 @@ jobs:
           command -v dpkg-deb
           command -v jpackage
 
+      - name: Test Debian dependency normalization
+        run: bash desktop/scripts/test-normalize-deb-dependencies.sh
+
       - name: Check Kotlin formatting
         run: ./gradlew spotlessCheck --build-cache --stacktrace
 

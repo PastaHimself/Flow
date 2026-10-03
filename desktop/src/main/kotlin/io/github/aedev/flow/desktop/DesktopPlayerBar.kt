@@ -26,9 +26,10 @@ import io.github.aedev.flow.data.model.Video
 @Composable
 internal fun DesktopPlayerBar(
     video: Video?,
-    player: DesktopMpvPlayer,
     paused: Boolean,
+    onSeekBack: () -> Unit,
     onPauseToggle: () -> Unit,
+    onSeekForward: () -> Unit,
     onStop: () -> Unit,
 ) {
     if (video == null) return
@@ -45,13 +46,13 @@ internal fun DesktopPlayerBar(
             )
             Text(video.channelName, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.width(12.dp))
-            IconButton(onClick = { player.seekBy(-10.0) }) {
+            IconButton(onClick = onSeekBack) {
                 Icon(Icons.Default.Replay10, contentDescription = "Seek back 10 seconds")
             }
             IconButton(onClick = onPauseToggle) {
                 Icon(if (paused) Icons.Default.PlayArrow else Icons.Default.Pause, contentDescription = if (paused) "Resume" else "Pause")
             }
-            IconButton(onClick = { player.seekBy(10.0) }) {
+            IconButton(onClick = onSeekForward) {
                 Icon(Icons.Default.Forward10, contentDescription = "Seek forward 10 seconds")
             }
             IconButton(onClick = onStop) { Icon(Icons.Default.Stop, contentDescription = "Stop") }

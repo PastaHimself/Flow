@@ -30,6 +30,7 @@ class DesktopLibraryStore(
     private val json = Json { prettyPrint = true }
     private val loadErrorsByPath = ConcurrentHashMap<Path, Throwable>()
 
+    @Synchronized
     fun load(): List<Video> {
         if (!Files.isRegularFile(file)) {
             loadError = null
@@ -44,6 +45,7 @@ class DesktopLibraryStore(
         }.getOrDefault(emptyList())
     }
 
+    @Synchronized
     fun save(videos: List<Video>) {
         check(loadError == null) {
             "Existing library could not be read; refusing to overwrite $file. Restart Flow after repairing or removing that file."
@@ -51,8 +53,23 @@ class DesktopLibraryStore(
         writeAtomically(file, json.encodeToString(videos.map(SavedVideo::fromVideo)))
     }
 
+    @Synchronized
+    fun toggleSaved(video: Video): List<Video> {
+        val current = load()
+        val updated =
+            if (current.any { it.id == video.id }) {
+                current.filterNot { it.id == video.id }
+            } else {
+                listOf(video) + current
+            }
+        save(updated)
+        return updated
+    }
+
+    @Synchronized
     fun loadHistory(): List<Video> = readVideos(historyFile)
 
+    @Synchronized
     fun recordWatched(video: Video): List<Video> {
         val updated =
             (listOf(video.copy(timestamp = System.currentTimeMillis())) + loadHistory().filterNot { it.id == video.id })
@@ -61,13 +78,16 @@ class DesktopLibraryStore(
         return updated
     }
 
+    @Synchronized
     fun clearHistory() {
         Files.deleteIfExists(historyFile)
         loadErrorsByPath.remove(historyFile)
     }
 
+    @Synchronized
     fun loadSubscriptions(): List<DesktopSubscription> = readList(subscriptionsFile)
 
+    @Synchronized
     fun toggleSubscription(video: Video): List<DesktopSubscription> {
         val channelId = video.channelId.ifBlank { return loadSubscriptions() }
         val current = loadSubscriptions()
@@ -87,8 +107,17 @@ class DesktopLibraryStore(
         return updated
     }
 
+    @Synchronized
+    fun removeSubscription(channelId: String): List<DesktopSubscription> {
+        val updated = loadSubscriptions().filterNot { it.channelId == channelId }
+        writeAtomically(subscriptionsFile, json.encodeToString(updated))
+        return updated
+    }
+
+    @Synchronized
     fun loadPlaylists(): List<DesktopPlaylist> = readList<SavedPlaylist>(playlistsFile).map(SavedPlaylist::toPlaylist)
 
+    @Synchronized
     fun addToPlaylist(
         playlistName: String,
         video: Video,
@@ -108,14 +137,17 @@ class DesktopLibraryStore(
         return updated
     }
 
+    @Synchronized
     fun removePlaylist(name: String): List<DesktopPlaylist> {
         val updated = loadPlaylists().filterNot { it.name == name }
         writeAtomically(playlistsFile, json.encodeToString(updated.map(SavedPlaylist::fromPlaylist)))
         return updated
     }
 
+    @Synchronized
     fun loadSearchHistory(): List<String> = readList(searchHistoryFile)
 
+    @Synchronized
     fun recordSearch(query: String): List<String> {
         val normalized = query.trim()
         if (normalized.isEmpty()) return loadSearchHistory()

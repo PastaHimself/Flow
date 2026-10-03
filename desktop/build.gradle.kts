@@ -1,5 +1,28 @@
+import org.gradle.api.Action
+import org.gradle.api.Task
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.io.File
+import java.io.Serializable
+
+private class NormalizeDebAction(
+    private val script: File,
+    private val debDirectory: File,
+    private val workDir: File,
+) : Action<Task>,
+    Serializable {
+    override fun execute(task: Task) {
+        val packages = debDirectory.listFiles { file -> file.isFile && file.extension == "deb" }?.toList().orEmpty()
+        check(packages.size == 1) { "Expected exactly one generated Debian package in $debDirectory, found ${packages.size}." }
+        val deb = packages.single()
+        val exitCode =
+            ProcessBuilder("bash", script.absolutePath, deb.absolutePath, workDir.absolutePath)
+                .inheritIO()
+                .start()
+                .waitFor()
+        check(exitCode == 0) { "Debian dependency normalization failed with exit code $exitCode." }
+    }
+}
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
@@ -29,6 +52,7 @@ dependencies {
     implementation(libs.coil.network.okhttp)
     implementation(libs.kotlinx.coroutines.swing)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.okhttp)
 
     testImplementation(libs.junit)
 }
@@ -55,10 +79,9 @@ compose.desktop {
     }
 }
 
-val desktopPackageVersion = providers.gradleProperty("flow.desktopVersion").get()
-val generatedDeb =
+val generatedDebDirectory =
     layout.buildDirectory
-        .file("compose/binaries/main/deb/flow_$desktopPackageVersion-1_amd64.deb")
+        .dir("compose/binaries/main/deb")
         .get()
         .asFile
 val normalizeDebWorkDir =
@@ -67,22 +90,19 @@ val normalizeDebWorkDir =
         .get()
         .asFile
 val normalizeDebScript = layout.projectDirectory.file("scripts/normalize-deb-dependencies.sh").asFile
+private val normalizeDebAction = NormalizeDebAction(normalizeDebScript, generatedDebDirectory, normalizeDebWorkDir)
 
 val normalizeDebDependencies =
-    tasks.register<Exec>("normalizeDebDependencies") {
+    tasks.register("normalizeDebDependencies") {
         group = "compose desktop"
         description = "Normalizes and validates Compose-generated Debian runtime dependencies."
-        commandLine(
-            "bash",
-            normalizeDebScript.absolutePath,
-            generatedDeb.absolutePath,
-            normalizeDebWorkDir.absolutePath,
-        )
+        doLast(normalizeDebAction)
     }
 
 tasks.configureEach {
     if (name == "packageDeb") {
         dependsOn("createRuntimeImage")
-        finalizedBy(normalizeDebDependencies)
+        inputs.file(normalizeDebScript)
+        doLast(normalizeDebAction)
     }
 }
