@@ -2,6 +2,7 @@ package io.github.aedev.flow.desktop
 
 import io.github.aedev.flow.data.model.Video
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -13,10 +14,14 @@ import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
+import okhttp3.Call
+import okhttp3.Callback
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.Response
 import org.w3c.dom.Element
 import org.xml.sax.InputSource
+import java.io.IOException
 import java.io.StringReader
 import java.net.URI
 import java.nio.file.Path
@@ -27,15 +32,34 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import javax.xml.parsers.DocumentBuilderFactory
 
-class DesktopYouTubeRepository(
+internal class DesktopYouTubeRepository(
     private val resolver: Path? = findExecutable("yt-dlp"),
     private val httpClient: OkHttpClient = OkHttpClient(),
     private val channelFeedFetcher: ((String) -> String)? = null,
+    private val mediaResolver: DesktopYouTubeMediaResolver = NewPipeYouTubeMediaResolver(),
 ) {
     val isAvailable: Boolean = resolver != null
     val unavailableReason: String? = if (resolver == null) "Install yt-dlp to browse YouTube." else null
 
     suspend fun discover(seed: String? = null): List<Video> = searchVideos(seed?.takeIf(String::isNotBlank) ?: DEFAULT_DISCOVERY_QUERY)
+
+    suspend fun discoverShorts(): List<Video> = shortCandidates(searchVideos("shorts #shorts"))
+
+    suspend fun discoverMusic(): List<Video> = searchVideos("official music audio").map { video -> video.copy(isMusic = true) }
+
+    suspend fun search(input: String): List<Video> {
+        val value = input.trim()
+        if (value.isEmpty()) return emptyList()
+        val videoId = youtubeVideoId(value)
+        if (videoId != null) {
+            return listOfNotNull(
+                withContext(Dispatchers.IO) {
+                    mediaResolver.resolve("https://www.youtube.com/watch?v=$videoId").video
+                },
+            )
+        }
+        return searchVideos(value)
+    }
 
     suspend fun searchVideos(query: String): List<Video> =
         withContext(Dispatchers.IO) {
@@ -66,7 +90,15 @@ class DesktopYouTubeRepository(
     ): List<Video> =
         withContext(Dispatchers.IO) {
             if (channelId.isBlank()) return@withContext emptyList()
-            val executable = resolver ?: error(unavailableReason ?: "yt-dlp is unavailable")
+            val executable = resolver
+            if (executable == null && YOUTUBE_CHANNEL_ID.matches(channelId)) {
+                return@withContext parseChannelFeed(
+                    payload = channelFeedFetcher?.invoke(channelId) ?: fetchChannelFeed(channelId),
+                    channelId = channelId,
+                    limit = limit,
+                )
+            }
+            check(executable != null) { unavailableReason ?: "yt-dlp is unavailable" }
             val channelUrl =
                 if (channelId.startsWith("@")) {
                     "https://www.youtube.com/$channelId/videos"
@@ -168,15 +200,42 @@ class DesktopYouTubeRepository(
         }
     }
 
-    private fun fetchChannelFeed(channelId: String): String {
+    private suspend fun fetchChannelFeed(channelId: String): String {
         val request =
             Request
                 .Builder()
                 .url("https://www.youtube.com/feeds/videos.xml?channel_id=$channelId")
                 .build()
-        return httpClient.newCall(request).execute().use { response ->
-            check(response.isSuccessful) { "YouTube channel feed failed with HTTP ${response.code}" }
-            response.body.string()
+        return suspendCancellableCoroutine { continuation ->
+            val call = httpClient.newCall(request)
+            continuation.invokeOnCancellation { call.cancel() }
+            call.enqueue(
+                object : Callback {
+                    override fun onFailure(
+                        call: Call,
+                        e: IOException,
+                    ) {
+                        if (continuation.isActive) continuation.resumeWith(Result.failure(e))
+                    }
+
+                    override fun onResponse(
+                        call: Call,
+                        response: Response,
+                    ) {
+                        response.use {
+                            if (!response.isSuccessful) {
+                                continuation.resumeWith(
+                                    Result.failure(
+                                        IllegalStateException("YouTube channel feed failed with HTTP ${response.code}"),
+                                    ),
+                                )
+                            } else {
+                                continuation.resumeWith(Result.success(response.body.string()))
+                            }
+                        }
+                    }
+                },
+            )
         }
     }
 
@@ -253,6 +312,13 @@ class DesktopYouTubeRepository(
         val json = Json { ignoreUnknownKeys = true }
     }
 }
+
+internal fun shortCandidates(videos: List<Video>): List<Video> =
+    videos
+        .filter { video -> video.duration in 1..MAX_SHORT_DURATION_SECONDS }
+        .map { video -> video.copy(isShort = true) }
+
+private const val MAX_SHORT_DURATION_SECONDS = 180
 
 private fun Element.first(
     namespace: String,

@@ -14,7 +14,8 @@ Architecture: amd64
 Maintainer: Flow Test <test@example.invalid>
 Description: Normalizer fixture
 Depends: libasound2 (>= 1.2) | custom-audio,
- libpng16-16 (>= 1.6) | custom-png, libc6
+ libpng16-16 (>= 1.6) | custom-png, libc6, yt-dlp
+
 EOF
 
 deb="$root/fixture.deb"
@@ -32,14 +33,29 @@ assert_dependency() {
 bash "$script_dir/normalize-deb-dependencies.sh" "$deb" "$root/work"
 first=$(dpkg-deb -f "$deb" Depends)
 
-for dependency in libasound2t64 libasound2 custom-audio libpng16-16t64 libpng16-16 custom-png libc6 mpv yt-dlp ffmpeg; do
+for dependency in libasound2t64 libasound2 custom-audio libpng16-16t64 libpng16-16 custom-png libc6 mpv ffmpeg; do
   assert_dependency "$first" "$dependency"
 done
+if assert_dependency "$first" yt-dlp; then
+  echo "yt-dlp should be recommended rather than required" >&2
+  exit 1
+fi
+first_recommends=$(dpkg-deb -f "$deb" Recommends)
+assert_dependency "$first_recommends" yt-dlp
+
+contents=$(dpkg-deb --contents "$deb")
+grep -Eq '[[:space:]]\./usr/share/applications/$' <<< "$contents"
+grep -Eq '[[:space:]]\./usr/share/desktop-directories/$' <<< "$contents"
 
 bash "$script_dir/normalize-deb-dependencies.sh" "$deb" "$root/work"
 second=$(dpkg-deb -f "$deb" Depends)
+second_recommends=$(dpkg-deb -f "$deb" Recommends)
 
 if [[ "$first" != "$second" ]]; then
   printf 'Dependency normalization is not idempotent.\nFirst:  %s\nSecond: %s\n' "$first" "$second" >&2
+  exit 1
+fi
+if [[ "$first_recommends" != "$second_recommends" ]]; then
+  printf 'Recommends normalization is not idempotent.\nFirst:  %s\nSecond: %s\n' "$first_recommends" "$second_recommends" >&2
   exit 1
 fi

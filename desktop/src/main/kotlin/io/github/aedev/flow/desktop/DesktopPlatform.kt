@@ -12,6 +12,7 @@ import java.io.File
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardOpenOption
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 
@@ -81,6 +82,14 @@ internal fun defaultCacheDirectory(
     return base.resolve("flow")
 }
 
+internal fun defaultConfigDirectory(
+    home: String = System.getProperty("user.home"),
+    xdgConfigHome: String? = System.getenv("XDG_CONFIG_HOME"),
+): Path {
+    val base = absoluteXdgPath(xdgConfigHome) ?: Path.of(home, ".config")
+    return base.resolve("flow")
+}
+
 internal fun defaultDownloadDirectory(
     home: String = System.getProperty("user.home"),
     xdgConfigHome: String? = System.getenv("XDG_CONFIG_HOME"),
@@ -138,6 +147,21 @@ internal fun openPath(path: Path): Result<Unit> =
         action = Desktop.Action.OPEN,
         desktopAction = { desktop -> desktop.open(path.toFile()) },
     )
+
+internal fun prepareDirectoryForOpening(path: Path): Path {
+    val target = path.toAbsolutePath().normalize()
+    Files.createDirectories(target)
+    check(Files.isDirectory(target)) { "Path is not a directory: $target" }
+    return target
+}
+
+internal fun prepareFileForOpening(path: Path): Path {
+    val target = path.toAbsolutePath().normalize()
+    target.parent?.let(Files::createDirectories)
+    check(Files.notExists(target) || Files.isRegularFile(target)) { "Path is not a regular file: $target" }
+    Files.newOutputStream(target, StandardOpenOption.CREATE, StandardOpenOption.APPEND).use { }
+    return target
+}
 
 internal fun copyToClipboard(text: String): Result<Unit> =
     runCatching {

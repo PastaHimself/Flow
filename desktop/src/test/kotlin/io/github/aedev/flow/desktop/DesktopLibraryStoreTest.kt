@@ -31,6 +31,30 @@ class DesktopLibraryStoreTest {
     }
 
     @Test
+    fun savedVideoPreservesDesktopMetadataUsedByLaterActions() {
+        val store = DesktopLibraryStore(temporaryFolder.root.toPath())
+        val source =
+            video(id = "metadata", title = "Metadata").copy(
+                likeCount = 42,
+                channelThumbnailUrl = "https://example.test/avatar.jpg",
+                tags = listOf("linux", "flow"),
+                isMusic = true,
+                isUpcoming = true,
+                isScheduledLive = true,
+                membersOnlyText = "Members only",
+                commentCountText = "9 comments",
+                channelThumbnailUrls = listOf("https://example.test/avatar-2.jpg"),
+                isVerifiedChannel = true,
+                badges = listOf("Official"),
+                snippet = "Desktop metadata",
+            )
+
+        store.save(listOf(source))
+
+        assertEquals(source, store.load().single())
+    }
+
+    @Test
     fun concurrentLibraryMutationsDoNotLoseSavedVideos() =
         runBlocking {
             val store = DesktopLibraryStore(temporaryFolder.root.toPath())

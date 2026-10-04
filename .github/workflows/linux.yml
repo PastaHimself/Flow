@@ -116,14 +116,22 @@ jobs:
           assert_field Description "Privacy-respecting YouTube client with local recommendations"
 
           depends=$(dpkg-deb -f "$output" Depends)
-          for dependency in libasound2t64 libasound2 libpng16-16t64 libpng16-16 mpv yt-dlp ffmpeg; do
+          for dependency in libasound2t64 libasound2 libpng16-16t64 libpng16-16 mpv ffmpeg; do
             assert_dependency "$dependency"
           done
+          if grep -Eq '(^|[,|][[:space:]]*)yt-dlp([[:space:](]|$)' <<< "$depends"; then
+            echo "::error::yt-dlp should be recommended rather than required."
+            exit 1
+          fi
+          recommends=$(dpkg-deb -f "$output" Recommends)
+          grep -Eq '(^|,[[:space:]]*)yt-dlp([[:space:](]|$)' <<< "$recommends"
 
           package_contents=$(dpkg-deb --contents "$output")
           grep -Eq '/opt/flow/bin/Flow$' <<< "$package_contents"
           grep -Eq '/opt/flow/lib/flow-Flow\.desktop$' <<< "$package_contents"
           grep -Eq '/opt/flow/lib/Flow\.png$' <<< "$package_contents"
+          grep -Eq '/usr/share/applications/$' <<< "$package_contents"
+          grep -Eq '/usr/share/desktop-directories/$' <<< "$package_contents"
           echo "DEB_PATH=$output" >> "$GITHUB_ENV"
 
       - name: Install and launch packaged application
@@ -132,12 +140,10 @@ jobs:
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y desktop-file-utils xvfb xauth
-          sudo install -d -m 0755 /usr/share/applications /usr/share/desktop-directories
-          sudo apt-get install -y "./${DEB_PATH}"
+          sudo apt-get install -y --no-install-recommends "./${DEB_PATH}"
 
           dpkg-query -W -f='${Status}\n' flow | grep -Fx 'install ok installed'
           command -v mpv
-          command -v yt-dlp
           command -v ffmpeg
           test -x /opt/flow/bin/Flow
           desktop-file-validate /opt/flow/lib/flow-Flow.desktop

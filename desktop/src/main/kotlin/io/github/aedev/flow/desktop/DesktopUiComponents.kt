@@ -6,14 +6,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.Bookmarks
@@ -34,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import io.github.aedev.flow.data.model.Video
@@ -49,7 +51,7 @@ internal fun ScreenColumn(
         Text(title, style = MaterialTheme.typography.headlineLarge)
         Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(22.dp))
-        Box(modifier = Modifier.fillMaxSize()) { content() }
+        Column(modifier = Modifier.fillMaxSize()) { content() }
     }
 }
 
@@ -64,8 +66,15 @@ internal fun VideoList(
     onToggleSubscription: ((Video) -> Unit)? = null,
     onCopyLink: ((Video) -> Unit)? = null,
     onAddToPlaylist: ((Video) -> Unit)? = null,
+    minCardWidth: Dp = 320.dp,
+    thumbnailAspectRatio: Float = 16f / 9f,
 ) {
-    LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxSize()) {
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(minSize = minCardWidth),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = Modifier.fillMaxSize(),
+    ) {
         items(videos, key = { it.id }) { video ->
             VideoCard(
                 video = video,
@@ -77,6 +86,7 @@ internal fun VideoList(
                 onToggleSubscription = onToggleSubscription?.let { action -> { action(video) } },
                 onCopyLink = onCopyLink?.let { action -> { action(video) } },
                 onAddToPlaylist = onAddToPlaylist?.let { action -> { action(video) } },
+                thumbnailAspectRatio = thumbnailAspectRatio,
             )
         }
     }
@@ -93,24 +103,26 @@ private fun VideoCard(
     onToggleSubscription: (() -> Unit)?,
     onCopyLink: (() -> Unit)?,
     onAddToPlaylist: (() -> Unit)?,
+    thumbnailAspectRatio: Float,
 ) {
     Card(
+        onClick = onPlay,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = MaterialTheme.shapes.large,
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(12.dp)) {
+        Column(modifier = Modifier.fillMaxWidth()) {
             AsyncImage(
                 model = video.thumbnailUrl,
                 contentDescription = video.title,
                 contentScale = ContentScale.Crop,
                 modifier =
                     Modifier
-                        .size(width = 224.dp, height = 126.dp)
+                        .fillMaxWidth()
+                        .aspectRatio(thumbnailAspectRatio)
                         .background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.medium),
             )
-            Spacer(Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
+            Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
                 Text(
                     text = video.title,
                     maxLines = 2,
@@ -146,23 +158,28 @@ private fun VideoCard(
                         Text(if (subscribed) "Subscribed" else "Subscribe")
                     }
                 }
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                    Spacer(Modifier.weight(1f))
+                    onCopyLink?.let { action ->
+                        IconButton(onClick = action) { Icon(Icons.Default.Link, contentDescription = "Copy YouTube link") }
+                    }
+                    onAddToPlaylist?.let { action ->
+                        IconButton(onClick = action) {
+                            Icon(Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = "Add to playlist")
+                        }
+                    }
+                    onDownload?.takeUnless { video.isLive }?.let { action ->
+                        IconButton(onClick = action) { Icon(Icons.Default.Download, contentDescription = "Download") }
+                    }
+                    IconButton(onClick = onToggleSaved) {
+                        Icon(
+                            imageVector = if (saved) Icons.Default.Bookmarks else Icons.Outlined.BookmarkAdd,
+                            contentDescription = if (saved) "Remove from library" else "Save to library",
+                        )
+                    }
+                    IconButton(onClick = onPlay) { Icon(Icons.Default.PlayArrow, contentDescription = "Play") }
+                }
             }
-            onCopyLink?.let { action ->
-                IconButton(onClick = action) { Icon(Icons.Default.Link, contentDescription = "Copy YouTube link") }
-            }
-            onAddToPlaylist?.let { action ->
-                IconButton(onClick = action) { Icon(Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = "Add to playlist") }
-            }
-            onDownload?.let { action ->
-                IconButton(onClick = action) { Icon(Icons.Default.Download, contentDescription = "Download") }
-            }
-            IconButton(onClick = onToggleSaved) {
-                Icon(
-                    imageVector = if (saved) Icons.Default.Bookmarks else Icons.Outlined.BookmarkAdd,
-                    contentDescription = if (saved) "Remove from library" else "Save to library",
-                )
-            }
-            IconButton(onClick = onPlay) { Icon(Icons.Default.PlayArrow, contentDescription = "Play") }
         }
     }
 }

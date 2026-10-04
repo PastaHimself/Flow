@@ -53,12 +53,19 @@ internal fun LibraryScreen(
     onToggleSaved: (Video) -> Unit,
     onDownload: (Video) -> Unit,
     onToggleSubscription: (Video) -> Unit,
+    onOpenDownloads: () -> Unit,
+    onOpenLocalFile: () -> Unit,
     onClearHistory: () -> Unit,
     onRemovePlaylist: (String) -> Unit,
 ) {
     var section by remember { mutableStateOf(LibrarySection.SAVED) }
     ScreenColumn(title = "Library", subtitle = "Your local Linux library") {
         Column(modifier = Modifier.fillMaxSize()) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = onOpenDownloads) { Text("Downloads") }
+                Button(onClick = onOpenLocalFile) { Text("Local media") }
+            }
+            Spacer(Modifier.height(12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 LibrarySection.entries.forEach { item ->
                     Button(onClick = { section = item }, enabled = section != item) { Text(item.label) }
@@ -368,7 +375,7 @@ internal fun DownloadsScreen(
 private enum class LibrarySection(
     val label: String,
 ) {
-    SAVED("Saved"),
+    SAVED("Watch later"),
     HISTORY("History"),
     PLAYLISTS("Playlists"),
 }

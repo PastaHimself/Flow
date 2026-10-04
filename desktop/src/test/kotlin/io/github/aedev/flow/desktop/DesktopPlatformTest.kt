@@ -27,9 +27,11 @@ class DesktopPlatformTest {
         val home = root.resolve("home")
         val dataHome = root.resolve("xdg-data")
         val cacheHome = root.resolve("xdg-cache")
+        val configHome = root.resolve("xdg-config")
 
         assertEquals(dataHome.resolve("flow"), defaultDataDirectory(home.toString(), dataHome.toString()))
         assertEquals(cacheHome.resolve("flow"), defaultCacheDirectory(home.toString(), cacheHome.toString()))
+        assertEquals(configHome.resolve("flow"), defaultConfigDirectory(home.toString(), configHome.toString()))
     }
 
     @Test
@@ -38,6 +40,7 @@ class DesktopPlatformTest {
 
         assertEquals(home.resolve(".local/share/flow"), defaultDataDirectory(home.toString(), ""))
         assertEquals(home.resolve(".cache/flow"), defaultCacheDirectory(home.toString(), ""))
+        assertEquals(home.resolve(".config/flow"), defaultConfigDirectory(home.toString(), ""))
     }
 
     @Test
@@ -46,6 +49,7 @@ class DesktopPlatformTest {
 
         assertEquals(home.resolve(".local/share/flow"), defaultDataDirectory(home.toString(), "relative-data"))
         assertEquals(home.resolve(".cache/flow"), defaultCacheDirectory(home.toString(), "relative-cache"))
+        assertEquals(home.resolve(".config/flow"), defaultConfigDirectory(home.toString(), "relative-config"))
     }
 
     @Test
@@ -180,6 +184,29 @@ class DesktopPlatformTest {
 
         assertTrue(failure is IllegalStateException)
         assertTrue(failure!!.message!!.contains("exit code 9"))
+    }
+
+    @Test
+    fun prepareDirectoryForOpeningCreatesMissingDirectory() {
+        val target = temporaryFolder.root.toPath().resolve("missing/downloads/Flow")
+
+        val prepared = prepareDirectoryForOpening(target)
+
+        assertEquals(target.toAbsolutePath().normalize(), prepared)
+        assertTrue(Files.isDirectory(prepared))
+    }
+
+    @Test
+    fun prepareFileForOpeningCreatesMissingParentAndPreservesExistingContent() {
+        val target = temporaryFolder.root.toPath().resolve("missing/cache/flow/mpv.log")
+
+        val prepared = prepareFileForOpening(target)
+        Files.writeString(prepared, "existing diagnostics")
+        prepareFileForOpening(target)
+
+        assertEquals(target.toAbsolutePath().normalize(), prepared)
+        assertTrue(Files.isRegularFile(prepared))
+        assertEquals("existing diagnostics", Files.readString(prepared))
     }
 
     private fun executableScript(

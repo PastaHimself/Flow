@@ -6,7 +6,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
@@ -14,6 +15,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -21,6 +23,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import io.github.aedev.flow.data.model.Video
 import kotlinx.coroutines.CancellationException
@@ -34,6 +42,7 @@ internal fun HomeScreen(
     error: String?,
     savedIds: Set<String>,
     subscribedIds: Set<String>,
+    watchedIds: Set<String>,
     recommendationQuery: String?,
     onRetry: () -> Unit,
     onPlay: (Video) -> Unit,
@@ -43,10 +52,25 @@ internal fun HomeScreen(
     onCopyLink: (Video) -> Unit,
     onAddToPlaylist: (Video) -> Unit,
 ) {
+    var chip by remember { mutableStateOf(HomeChip.ALL) }
+    val visibleVideos =
+        when (chip) {
+            HomeChip.ALL -> videos
+            HomeChip.NEW_TO_YOU -> videos.filterNot { it.id in watchedIds }
+            HomeChip.RECENT -> videos.sortedByDescending(Video::timestamp)
+            HomeChip.LIVE -> videos.filter(Video::isLive)
+            HomeChip.WATCHED -> videos.filter { it.id in watchedIds }
+        }
     ScreenColumn(
         title = "Home",
         subtitle = recommendationQuery?.let { "Local recommendation seed: $it" } ?: "Private discovery without an account",
     ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            HomeChip.entries.forEach { item ->
+                Button(onClick = { chip = item }, enabled = chip != item) { Text(item.label) }
+            }
+        }
+        Spacer(Modifier.height(14.dp))
         when {
             loading -> {
                 LoadingState()
@@ -56,13 +80,13 @@ internal fun HomeScreen(
                 ErrorState(error, onRetry)
             }
 
-            videos.isEmpty() -> {
-                EmptyState("No videos were returned.")
+            visibleVideos.isEmpty() -> {
+                EmptyState(if (videos.isEmpty()) "No videos were returned." else "No videos match ${chip.label}.")
             }
 
             else -> {
                 VideoList(
-                    videos = videos,
+                    videos = visibleVideos,
                     savedIds = savedIds,
                     onPlay = onPlay,
                     onToggleSaved = onToggleSaved,
@@ -77,9 +101,27 @@ internal fun HomeScreen(
     }
 }
 
+private enum class HomeChip(
+    val label: String,
+) {
+    ALL("All"),
+    NEW_TO_YOU("New to you"),
+    RECENT("Recently uploaded"),
+    LIVE("Live"),
+    WATCHED("Watched"),
+}
+
+internal class DesktopSearchState {
+    var query by mutableStateOf("")
+    var results by mutableStateOf(emptyList<Video>())
+    var loading by mutableStateOf(false)
+    var error by mutableStateOf<String?>(null)
+}
+
 @Composable
 internal fun SearchScreen(
     repository: DesktopYouTubeRepository,
+    state: DesktopSearchState,
     savedIds: Set<String>,
     subscribedIds: Set<String>,
     searchHistory: List<String>,
@@ -92,26 +134,22 @@ internal fun SearchScreen(
     onAddToPlaylist: (Video) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    var query by remember { mutableStateOf("") }
-    var results by remember { mutableStateOf(emptyList<Video>()) }
-    var loading by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
     var searchRequestId by remember { mutableStateOf(0L) }
     var searchJob by remember { mutableStateOf<Job?>(null) }
 
-    fun search() {
-        val submittedQuery = query.trim()
+    fun search(candidate: String = state.query) {
+        val submittedQuery = candidate.trim()
         if (submittedQuery.isBlank()) return
         onSearch(submittedQuery)
         searchJob?.cancel()
         val requestId = ++searchRequestId
-        loading = true
-        error = null
+        state.loading = true
+        state.error = null
         searchJob =
             scope.launch {
                 val outcome =
                     try {
-                        Result.success(repository.searchVideos(submittedQuery))
+                        Result.success(repository.search(submittedQuery))
                     } catch (cancellation: CancellationException) {
                         throw cancellation
                     } catch (failure: Throwable) {
@@ -119,11 +157,18 @@ internal fun SearchScreen(
                     }
                 if (requestId != searchRequestId) return@launch
                 outcome
-                    .onSuccess { results = it }
-                    .onFailure { error = it.message ?: it.javaClass.simpleName }
-                loading = false
+                    .onSuccess { state.results = it }
+                    .onFailure { state.error = it.message ?: it.javaClass.simpleName }
+                state.loading = false
                 searchJob = null
             }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            searchJob?.cancel()
+            state.loading = false
+        }
     }
 
     ScreenColumn(title = "Search", subtitle = "Search YouTube without an account") {
@@ -133,50 +178,67 @@ internal fun SearchScreen(
             modifier = Modifier.fillMaxWidth(),
         ) {
             OutlinedTextField(
-                value = query,
+                value = state.query,
                 onValueChange = { value ->
                     searchJob?.cancel()
                     searchJob = null
-                    query = value
+                    state.query = value
                     searchRequestId++
-                    loading = false
-                    error = null
+                    state.loading = false
+                    state.error = null
                 },
                 singleLine = true,
                 label = { Text("Search videos") },
-                modifier = Modifier.weight(1f),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(onSearch = { search() }),
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .onPreviewKeyEvent { event ->
+                            if (event.type == KeyEventType.KeyDown && event.key == Key.Enter) {
+                                search()
+                                true
+                            } else {
+                                false
+                            }
+                        },
             )
-            Button(onClick = ::search, enabled = query.isNotBlank() && !loading) {
+            Button(onClick = ::search, enabled = state.query.isNotBlank() && !state.loading) {
                 Icon(Icons.Default.Search, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
                 Text("Search")
             }
         }
         Spacer(Modifier.height(20.dp))
-        if (results.isEmpty() && !loading && error == null && searchHistory.isNotEmpty()) {
+        if (state.results.isEmpty() && !state.loading && state.error == null && searchHistory.isNotEmpty()) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 searchHistory.take(5).forEach { previous ->
-                    Button(onClick = { query = previous }) { Text(previous, maxLines = 1) }
+                    Button(
+                        onClick = {
+                            state.query = previous
+                            search(previous)
+                        },
+                    ) { Text(previous, maxLines = 1) }
                 }
             }
             Spacer(Modifier.height(12.dp))
         }
         when {
-            loading -> {
+            state.loading -> {
                 LoadingState()
             }
 
-            error != null -> {
-                ErrorState(error!!, ::search)
+            state.error != null -> {
+                ErrorState(state.error!!, ::search)
             }
 
-            results.isEmpty() -> {
+            state.results.isEmpty() -> {
                 EmptyState("Enter a query to find videos.")
             }
 
             else -> {
                 VideoList(
-                    videos = results,
+                    videos = state.results,
                     savedIds = savedIds,
                     onPlay = onPlay,
                     onToggleSaved = onToggleSaved,
@@ -185,72 +247,6 @@ internal fun SearchScreen(
                     onToggleSubscription = onToggleSubscription,
                     onCopyLink = onCopyLink,
                     onAddToPlaylist = onAddToPlaylist,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-internal fun SettingsScreen(
-    player: DesktopMpvPlayer,
-    repository: DesktopYouTubeRepository,
-    downloader: DesktopDownloader,
-    libraryStore: DesktopLibraryStore,
-) {
-    ScreenColumn(title = "Settings", subtitle = "Linux desktop") {
-        LazyColumn {
-            item {
-                SettingCard(
-                    title = "Playback",
-                    body =
-                        when {
-                            !player.canPlayLocal -> {
-                                player.unavailableReason.orEmpty()
-                            }
-
-                            player.canPlayYouTube -> {
-                                "mpv + yt-dlp detected. Local and YouTube playback open in an mpv window. Logs: ${player.diagnosticsFile}"
-                            }
-
-                            else -> {
-                                "mpv detected for local playback. ${player.youtubeUnavailableReason.orEmpty()} Logs: ${player.diagnosticsFile}"
-                            }
-                        },
-                )
-            }
-            item {
-                SettingCard(
-                    title = "YouTube access",
-                    body =
-                        if (repository.isAvailable) {
-                            "yt-dlp detected for search and discovery."
-                        } else {
-                            repository.unavailableReason.orEmpty()
-                        },
-                )
-            }
-            item {
-                SettingCard(
-                    title = "Downloads",
-                    body =
-                        if (downloader.isAvailable) {
-                            "Saved to ${downloader.directory}"
-                        } else {
-                            downloader.unavailableReason.orEmpty()
-                        },
-                )
-            }
-            item {
-                SettingCard(
-                    title = "Local data",
-                    body = "Library, history, subscriptions, playlists and search history: ${libraryStore.dataDirectory}",
-                )
-            }
-            item {
-                SettingCard(
-                    title = "Privacy",
-                    body = "Desktop recommendations are seeded from your local library. No Flow account or telemetry service is used.",
                 )
             }
         }

@@ -25,23 +25,19 @@ class DesktopDownloaderTest {
     fun downloadTracksActiveStateAndReturnsProducedFile() =
         runBlocking {
             val root = temporaryFolder.root.toPath()
-            val resolver =
+            val ffmpeg =
                 executableScript(
-                    root.resolve("fake-yt-dlp"),
+                    root.resolve("fake-ffmpeg"),
                     """
-                    output_template=''
+                    output=''
                     while [ "${'$'}#" -gt 0 ]; do
-                      if [ "${'$'}1" = '-o' ]; then shift; output_template=${'$'}1; fi
+                      output=${'$'}1
                       shift
                     done
-                    output_dir=${'$'}(dirname "${'$'}output_template")
-                    mkdir -p "${'$'}output_dir"
-                    output="${'$'}output_dir/fake.mp4"
                     printf 'media' > "${'$'}output"
-                    printf '%s\n' "${'$'}output"
                     """.trimIndent(),
                 )
-            val downloader = DesktopDownloader(root.resolve("downloads"), resolver, ffmpeg = null)
+            val downloader = DesktopDownloader(root.resolve("downloads"), resolver(), ffmpeg)
 
             val result = downloader.download(video())
 
@@ -53,22 +49,20 @@ class DesktopDownloaderTest {
     fun duplicateDownloadIsRejectedAndActiveDownloadCanBeCancelled() =
         runBlocking {
             val root = temporaryFolder.root.toPath()
-            val resolver =
+            val ffmpeg =
                 executableScript(
-                    root.resolve("slow-yt-dlp"),
+                    root.resolve("slow-ffmpeg"),
                     """
-                    output_template=''
+                    output=''
                     while [ "${'$'}#" -gt 0 ]; do
-                      if [ "${'$'}1" = '-o' ]; then shift; output_template=${'$'}1; fi
+                      output=${'$'}1
                       shift
                     done
-                    output_dir=${'$'}(dirname "${'$'}output_template")
-                    mkdir -p "${'$'}output_dir"
-                    echo ${'$'}${'$'} > "${'$'}output_dir/resolver.pid"
+                    printf 'partial' > "${'$'}output"
                     sleep 30
                     """.trimIndent(),
                 )
-            val downloader = DesktopDownloader(root.resolve("downloads"), resolver, ffmpeg = null)
+            val downloader = DesktopDownloader(root.resolve("downloads"), resolver(), ffmpeg)
             val video = video()
             val job = launch(Dispatchers.Default) { downloader.download(video) }
 
@@ -84,6 +78,8 @@ class DesktopDownloaderTest {
                 while (downloader.activeDownloads.value.isNotEmpty()) delay(10)
             }
             assertFalse(downloader.isDownloading(video.id))
+            assertTrue(downloader.listDownloadedFiles().isEmpty())
+            assertTrue(Files.list(root.resolve("downloads")).use { paths -> paths.noneMatch { it.fileName.toString().endsWith(".part") } })
         }
 
     @Test
@@ -122,6 +118,60 @@ class DesktopDownloaderTest {
         assertTrue(runCatching { invalidDownloader.listDownloadedFiles() }.exceptionOrNull() is IllegalStateException)
     }
 
+    @Test
+    fun downloadRequiresFfmpegEvenWhenYouTubeExtractionIsAvailable() {
+        val downloader = DesktopDownloader(temporaryFolder.root.toPath(), resolver(), ffmpeg = null)
+
+        assertFalse(downloader.isAvailable)
+        assertTrue(downloader.unavailableReason!!.contains("ffmpeg"))
+    }
+
+    @Test
+    fun liveStreamsAreRejectedBeforeResolutionOrFfmpeg() =
+        runBlocking {
+            var resolved = false
+            val downloader =
+                DesktopDownloader(
+                    temporaryFolder.root.toPath(),
+                    DesktopYouTubeMediaResolver {
+                        resolved = true
+                        error("should not resolve")
+                    },
+                    ffmpeg = temporaryFolder.newFile("ffmpeg").toPath(),
+                )
+
+            val failure = runCatching { downloader.download(video().copy(isLive = true)) }.exceptionOrNull()
+
+            assertTrue(failure is IllegalArgumentException)
+            assertFalse(resolved)
+        }
+
+    @Test
+    fun failedDownloadRemovesPartialArtifact() =
+        runBlocking {
+            val root = temporaryFolder.root.toPath()
+            val ffmpeg =
+                executableScript(
+                    root.resolve("failing-ffmpeg"),
+                    """
+                    output=''
+                    while [ "${'$'}#" -gt 0 ]; do
+                      output=${'$'}1
+                      shift
+                    done
+                    printf 'partial' > "${'$'}output"
+                    exit 9
+                    """.trimIndent(),
+                )
+            val downloader = DesktopDownloader(root.resolve("downloads"), resolver(), ffmpeg)
+
+            val failure = runCatching { downloader.download(video()) }.exceptionOrNull()
+
+            assertTrue(failure is IllegalStateException)
+            assertTrue(downloader.listDownloadedFiles().isEmpty())
+            assertTrue(Files.list(root.resolve("downloads")).use { paths -> paths.noneMatch { it.fileName.toString().endsWith(".part") } })
+        }
+
     private fun executableScript(
         path: Path,
         body: String,
@@ -142,4 +192,15 @@ class DesktopDownloaderTest {
             viewCount = 1,
             uploadDate = "2026-10-03",
         )
+
+    private fun resolver() =
+        DesktopYouTubeMediaResolver {
+            DesktopResolvedMedia(
+                title = "Desktop download",
+                playbackUrl = "https://media.example/master.m3u8",
+                videoUrl = "https://media.example/video.mp4",
+                audioUrl = "https://media.example/audio.m4a",
+                progressiveUrl = "https://media.example/progressive.mp4",
+            )
+        }
 }

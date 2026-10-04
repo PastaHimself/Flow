@@ -12,16 +12,22 @@ import kotlinx.coroutines.job
 import kotlinx.coroutines.withContext
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardCopyOption
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 
-class DesktopDownloader(
+internal class DesktopDownloader(
     val directory: Path = defaultDownloadDirectory().resolve("Flow"),
-    private val resolver: Path? = findExecutable("yt-dlp"),
+    private val resolver: DesktopYouTubeMediaResolver? = NewPipeYouTubeMediaResolver(),
     private val ffmpeg: Path? = findExecutable("ffmpeg"),
 ) {
-    val isAvailable: Boolean = resolver != null
-    val unavailableReason: String? = if (resolver == null) "Install yt-dlp to enable downloads." else null
+    val isAvailable: Boolean = resolver != null && ffmpeg != null
+    val unavailableReason: String? =
+        when {
+            resolver == null -> "YouTube media extraction is unavailable."
+            ffmpeg == null -> "Install ffmpeg to enable downloads."
+            else -> null
+        }
     private val activeJobs = ConcurrentHashMap<String, Job>()
     private val activeStateLock = Any()
     private val _activeDownloads = MutableStateFlow<Map<String, String>>(emptyMap())
@@ -57,48 +63,115 @@ class DesktopDownloader(
 
     suspend fun download(video: Video): Path =
         withContext(Dispatchers.IO) {
-            val executable = resolver ?: error(unavailableReason ?: "yt-dlp is unavailable")
+            require(!video.isLive) { "Live streams cannot be downloaded until the stream has ended." }
+            val mediaResolver = resolver ?: error(unavailableReason ?: "YouTube media extraction is unavailable")
+            val ffmpegExecutable = ffmpeg ?: error(unavailableReason ?: "ffmpeg is unavailable")
             val job = currentCoroutineContext().job
             check(activeJobs.putIfAbsent(video.id, job) == null) { "${video.title} is already downloading." }
             updateActive(video.id, video.title)
+            var partialOutput: Path? = null
             try {
                 Files.createDirectories(directory)
-                val outputTemplate = directory.resolve("%(title).180B [%(id)s].%(ext)s").toString()
-                val command =
-                    buildList {
-                        add(executable.toString())
-                        add("--no-playlist")
-                        add("--no-warnings")
-                        add("--restrict-filenames")
-                        add("--print")
-                        add("after_move:filepath")
-                        if (ffmpeg != null) {
-                            add("--merge-output-format")
-                            add("mp4")
-                        }
-                        add("-o")
-                        add(outputTemplate)
-                        add("https://www.youtube.com/watch?v=${video.id}")
-                    }
+                val media = mediaResolver.resolve("https://www.youtube.com/watch?v=${video.id}")
+                val output = uniqueDownloadPath(media.title.ifBlank { video.title }, video.id)
+                val staging = output.resolveSibling("${output.fileName}.part")
+                partialOutput = staging
+                val command = ffmpegDownloadCommand(ffmpegExecutable, media, staging)
                 val result = runProcess(command, timeout = Duration.ofMinutes(20))
                 check(result.exitCode == 0) {
                     result.stderr.lineSequence().lastOrNull(String::isNotBlank)
                         ?: "Download failed with exit code ${result.exitCode}"
                 }
-                val downloaded =
-                    result.stdout
-                        .lineSequence()
-                        .lastOrNull(String::isNotBlank)
-                        ?.let(Path::of)
-                check(downloaded != null && Files.isRegularFile(downloaded)) {
+                check(Files.isRegularFile(staging) && Files.size(staging) > 0L) {
                     "Download finished without producing a media file."
                 }
-                downloaded
+                moveCompletedDownload(staging, output)
+                partialOutput = null
+                output
             } finally {
+                partialOutput?.let { path -> runCatching { Files.deleteIfExists(path) } }
                 activeJobs.remove(video.id, job)
                 updateActive(video.id, null)
             }
         }
+
+    private fun ffmpegDownloadCommand(
+        executable: Path,
+        media: DesktopResolvedMedia,
+        output: Path,
+    ): List<String> {
+        val videoUrl = media.videoUrl
+        val audioUrl = media.audioUrl
+        return if (videoUrl != null && audioUrl != null) {
+            listOf(
+                executable.toString(),
+                "-hide_banner",
+                "-loglevel",
+                "error",
+                "-y",
+                "-i",
+                videoUrl,
+                "-i",
+                audioUrl,
+                "-map",
+                "0:v:0",
+                "-map",
+                "1:a:0",
+                "-c",
+                "copy",
+                "-f",
+                "mp4",
+                output.toString(),
+            )
+        } else {
+            val source = media.progressiveUrl ?: media.downloadUrl ?: error("YouTube returned no MP4-compatible download stream.")
+            listOf(
+                executable.toString(),
+                "-hide_banner",
+                "-loglevel",
+                "error",
+                "-y",
+                "-i",
+                source,
+                "-c",
+                "copy",
+                "-f",
+                "mp4",
+                output.toString(),
+            )
+        }
+    }
+
+    private fun moveCompletedDownload(
+        staging: Path,
+        output: Path,
+    ) {
+        runCatching {
+            Files.move(staging, output, StandardCopyOption.ATOMIC_MOVE)
+        }.getOrElse {
+            Files.move(staging, output)
+        }
+    }
+
+    private fun uniqueDownloadPath(
+        title: String,
+        videoId: String,
+    ): Path {
+        val safeTitle =
+            title
+                .replace(Regex("[^A-Za-z0-9._ -]+"), "_")
+                .trim(' ', '.', '_')
+                .take(MAX_FILE_TITLE_LENGTH)
+                .ifBlank { "video" }
+        val base = "$safeTitle [$videoId]"
+        var candidate = directory.resolve("$base.mp4")
+        var suffix = 2
+        while (Files.exists(candidate)) {
+            candidate = directory.resolve("$base ($suffix).mp4")
+            suffix++
+        }
+        return candidate
+    }
 
     private fun updateActive(
         videoId: String,
@@ -112,6 +185,10 @@ class DesktopDownloader(
                     _activeDownloads.value + (videoId to title)
                 }
         }
+    }
+
+    private companion object {
+        const val MAX_FILE_TITLE_LENGTH = 180
     }
 }
 

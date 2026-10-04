@@ -1,5 +1,6 @@
 package io.github.aedev.flow.desktop
 
+import io.github.aedev.flow.data.model.Video
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -138,4 +139,91 @@ class DesktopYouTubeRepositoryTest {
 
             assertEquals(listOf("fallback001"), result.map { it.id })
         }
+
+    @Test
+    fun canonicalChannelFeedDoesNotRequireYtDlp() =
+        kotlinx.coroutines.runBlocking {
+            val channelId = "UC1234567890123456789012"
+            val repository =
+                DesktopYouTubeRepository(
+                    resolver = null,
+                    channelFeedFetcher = {
+                        """
+                        <feed xmlns="http://www.w3.org/2005/Atom"
+                              xmlns:yt="http://www.youtube.com/xml/schemas/2015"
+                              xmlns:media="http://search.yahoo.com/mrss/">
+                          <entry>
+                            <yt:videoId>feedonly001</yt:videoId>
+                            <title>Feed-only video</title>
+                            <published>2026-10-03T09:20:23Z</published>
+                            <author><name>Feed-only Channel</name></author>
+                          </entry>
+                        </feed>
+                        """.trimIndent()
+                    },
+                )
+
+            val result = repository.channelVideos(channelId, limit = 8)
+
+            assertEquals(listOf("feedonly001"), result.map { it.id })
+        }
+
+    @Test
+    fun directVideoUrlSearchUsesBuiltInMediaResolverWithoutYtDlp() =
+        kotlinx.coroutines.runBlocking {
+            val expected =
+                Video(
+                    id = "direct123",
+                    title = "Direct video",
+                    channelName = "Flow",
+                    channelId = "UCdirect",
+                    thumbnailUrl = "",
+                    duration = 10,
+                    viewCount = 1,
+                    uploadDate = "today",
+                )
+            val repository =
+                DesktopYouTubeRepository(
+                    resolver = null,
+                    mediaResolver =
+                        DesktopYouTubeMediaResolver {
+                            DesktopResolvedMedia(
+                                title = expected.title,
+                                playbackUrl = "https://media.example/video.m3u8",
+                                video = expected,
+                            )
+                        },
+                )
+
+            val result = repository.search("https://www.youtube.com/watch?v=direct123")
+
+            assertEquals(listOf(expected), result)
+        }
+
+    @Test
+    fun shortCandidatesRejectLongFormResultsInsteadOfRelabelingThem() {
+        val short = testVideo("short", duration = 60)
+        val threeMinutes = testVideo("three-minutes", duration = 180)
+        val long = testVideo("long", duration = 181)
+        val unknown = testVideo("unknown", duration = 0)
+
+        val result = shortCandidates(listOf(short, long, unknown, threeMinutes))
+
+        assertEquals(listOf("short", "three-minutes"), result.map(Video::id))
+        assertTrue(result.all(Video::isShort))
+    }
+
+    private fun testVideo(
+        id: String,
+        duration: Int,
+    ) = Video(
+        id = id,
+        title = id,
+        channelName = "Flow",
+        channelId = "UCflow",
+        thumbnailUrl = "",
+        duration = duration,
+        viewCount = 0,
+        uploadDate = "",
+    )
 }

@@ -52,6 +52,7 @@ dependencies {
     implementation(libs.coil.network.okhttp)
     implementation(libs.kotlinx.coroutines.swing)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.newpipe.extractor)
     implementation(libs.okhttp)
 
     testImplementation(libs.junit)

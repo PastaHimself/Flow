@@ -1,5 +1,6 @@
 package io.github.aedev.flow.desktop
 
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -8,6 +9,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.nio.file.Files
+import java.nio.file.Path
 
 class DesktopMpvPlayerTest {
     @get:Rule
@@ -21,7 +23,53 @@ class DesktopMpvPlayerTest {
         assertTrue(player.canPlayLocal)
         assertFalse(player.canPlayYouTube)
         assertNull(player.unavailableReason)
-        assertTrue(player.youtubeUnavailableReason!!.contains("yt-dlp"))
+        assertTrue(player.youtubeUnavailableReason!!.contains("extraction"))
+    }
+
+    @Test
+    fun youtubePlaybackCapabilityUsesBuiltInResolverRatherThanYtDlpPath() {
+        val mpv = temporaryFolder.newFile("mpv").toPath()
+        val player =
+            DesktopMpvPlayer(
+                mpv = mpv,
+                youtubeResolver =
+                    DesktopYouTubeMediaResolver {
+                        DesktopResolvedMedia(
+                            title = "Resolved",
+                            playbackUrl = "https://media.example/video.m3u8",
+                        )
+                    },
+            )
+
+        assertTrue(player.canPlayYouTube)
+        assertNull(player.youtubeUnavailableReason)
+    }
+
+    @Test
+    fun mpvLaunchDisablesYtDlpHook() {
+        val command = mpvLaunchCommand(Path.of("/usr/bin/mpv"), Path.of("/tmp/flow.sock"))
+
+        assertTrue(command.contains("--ytdl=no"))
+        assertTrue(command.contains("--input-ipc-server=/tmp/flow.sock"))
+    }
+
+    @Test
+    fun adaptivePlaybackAddsResolvedAudioAsPerFileOption() {
+        val arguments =
+            mpvLoadFileArguments(
+                mediaUrl = "https://media.example/video.mp4",
+                audioUrl = "https://media.example/audio.m4a?token=abc",
+            )
+
+        assertEquals(
+            listOf(
+                "loadfile",
+                "https://media.example/video.mp4",
+                "replace",
+                "audio-files-append=https://media.example/audio.m4a?token=abc",
+            ),
+            arguments,
+        )
     }
 
     @Test
@@ -32,7 +80,10 @@ class DesktopMpvPlayerTest {
         val diagnostics = temporaryFolder.root.toPath().resolve("cache/mpv.log")
         val player = DesktopMpvPlayer(mpv = mpv, youtubeResolver = null, diagnosticsFile = diagnostics)
 
-        val failure = runCatching { player.play(temporaryFolder.newFile("local.mp4").absolutePath) }.exceptionOrNull()
+        val failure =
+            runBlocking {
+                runCatching { player.play(temporaryFolder.newFile("local.mp4").absolutePath) }.exceptionOrNull()
+            }
 
         assertTrue(failure is IllegalStateException)
         assertTrue(failure!!.message!!.contains(diagnostics.toString()))

@@ -3,6 +3,8 @@ package io.github.aedev.flow.desktop
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -167,9 +169,9 @@ internal fun parseMpvIpcMessage(line: String): MpvIpcMessage? {
     }
 }
 
-class DesktopMpvPlayer(
+internal class DesktopMpvPlayer(
     private val mpv: Path? = findExecutable("mpv"),
-    private val youtubeResolver: Path? = findExecutable("yt-dlp"),
+    private val youtubeResolver: DesktopYouTubeMediaResolver? = NewPipeYouTubeMediaResolver(),
     val diagnosticsFile: Path = defaultCacheDirectory().resolve("mpv.log"),
 ) {
     val canPlayLocal: Boolean = mpv != null
@@ -179,12 +181,12 @@ class DesktopMpvPlayer(
     val youtubeUnavailableReason: String? =
         when {
             mpv == null -> unavailableReason
-            youtubeResolver == null -> "Install yt-dlp so mpv can resolve YouTube URLs."
+            youtubeResolver == null -> "YouTube media extraction is unavailable."
             else -> null
         }
 
     private val operationLock = Any()
-    private val playbackCommandLock = Any()
+    private val playbackCommandLock = Mutex()
     private val trackerLock = Any()
     private val requestIds = AtomicLong(0L)
     private val responses = ConcurrentHashMap<Long, CompletableFuture<String>>()
@@ -201,12 +203,18 @@ class DesktopMpvPlayer(
     private val isRunning: Boolean
         get() = synchronized(operationLock) { process?.isAlive == true }
 
-    fun play(mediaUrl: String) =
-        synchronized(playbackCommandLock) {
+    suspend fun play(mediaUrl: String) =
+        playbackCommandLock.withLock {
             check(canPlayLocal) { unavailableReason ?: "mpv is unavailable" }
-            if (requiresYouTubeResolver(mediaUrl)) {
-                check(canPlayYouTube) { youtubeUnavailableReason ?: "YouTube playback is unavailable" }
-            }
+            val resolvedMedia =
+                if (requiresYouTubeResolver(mediaUrl)) {
+                    check(canPlayYouTube) { youtubeUnavailableReason ?: "YouTube playback is unavailable" }
+                    youtubeResolver?.resolve(mediaUrl)
+                        ?: error(youtubeUnavailableReason ?: "YouTube playback is unavailable")
+                } else {
+                    null
+                }
+            val loadUrl = resolvedMedia?.playbackUrl ?: mediaUrl
             ensureStarted()
             updateTracker {
                 it.copy(
@@ -217,7 +225,7 @@ class DesktopMpvPlayer(
                 )
             }
             try {
-                sendCommand("loadfile", mediaUrl, "replace")
+                sendCommand(*mpvLoadFileArguments(loadUrl, resolvedMedia?.playbackAudioUrl).toTypedArray())
                 sendCommand("set_property", "pause", false)
             } catch (failure: Throwable) {
                 failPlayback(mediaUrl, failure.message ?: failure.javaClass.simpleName)
@@ -296,6 +304,7 @@ class DesktopMpvPlayer(
     }
 
     private fun startProcessLocked() {
+        val executable = mpv ?: error(unavailableReason ?: "mpv is unavailable")
         diagnosticsFile.parent?.let(Files::createDirectories)
         Files.writeString(
             diagnosticsFile,
@@ -307,14 +316,8 @@ class DesktopMpvPlayer(
         Files.deleteIfExists(socket)
         socketPath = socket
         val startedProcess =
-            ProcessBuilder(
-                mpv.toString(),
-                "--idle=yes",
-                "--force-window=yes",
-                "--input-terminal=no",
-                "--terminal=no",
-                "--input-ipc-server=$socket",
-            ).redirectOutput(ProcessBuilder.Redirect.appendTo(diagnosticsFile.toFile()))
+            ProcessBuilder(mpvLaunchCommand(executable, socket))
+                .redirectOutput(ProcessBuilder.Redirect.appendTo(diagnosticsFile.toFile()))
                 .redirectError(ProcessBuilder.Redirect.appendTo(diagnosticsFile.toFile()))
                 .start()
         process = startedProcess
@@ -556,6 +559,30 @@ class DesktopMpvPlayer(
         const val PAUSE_OBSERVER_ID = 1L
     }
 }
+
+internal fun mpvLaunchCommand(
+    mpv: Path,
+    socket: Path,
+): List<String> =
+    listOf(
+        mpv.toString(),
+        "--idle=yes",
+        "--force-window=yes",
+        "--ytdl=no",
+        "--input-terminal=no",
+        "--terminal=no",
+        "--input-ipc-server=$socket",
+    )
+
+internal fun mpvLoadFileArguments(
+    mediaUrl: String,
+    audioUrl: String?,
+): List<Any> =
+    if (audioUrl == null) {
+        listOf("loadfile", mediaUrl, "replace")
+    } else {
+        listOf("loadfile", mediaUrl, "replace", "audio-files-append=$audioUrl")
+    }
 
 private fun MpvPlaybackTracker.toPlaybackState(): DesktopPlaybackState =
     DesktopPlaybackState(

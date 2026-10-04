@@ -12,18 +12,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.LibraryMusic
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Subscriptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationRail
-import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -32,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -57,71 +50,91 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.awt.FileDialog
-import java.awt.Frame
 import java.nio.file.Path
+import javax.swing.JOptionPane
 
-private enum class Destination(
-    val label: String,
-) {
-    HOME("Home"),
-    SEARCH("Search"),
-    SUBSCRIPTIONS("Subscriptions"),
-    LIBRARY("Library"),
-    DOWNLOADS("Downloads"),
-    SETTINGS("Settings"),
-}
-
-fun main() =
-    application {
-        val trayState = rememberTrayState()
-        val trayIcon = rememberVectorPainter(Icons.Default.Home)
-        if (isTraySupported) {
-            Tray(
-                icon = trayIcon,
-                state = trayState,
-                tooltip = "Flow",
-                menu = {
-                    Item("Open Flow website", onClick = { openExternalUrl("https://github.com/A-EDev/Flow") })
-                    Separator()
-                    Item("Quit", onClick = ::exitApplication)
-                },
-            )
-        }
-        Window(
-            onCloseRequest = ::exitApplication,
-            title = "Flow",
-        ) {
-            MenuBar {
-                Menu("Flow") {
-                    Item("Project website", onClick = { openExternalUrl("https://github.com/A-EDev/Flow") })
-                    Separator()
-                    Item("Quit", onClick = ::exitApplication)
-                }
-            }
-            FlowDesktopTheme {
-                FlowDesktopApp(
-                    onNotify = { title, message ->
-                        if (isTraySupported) trayState.sendNotification(Notification(title, message))
+fun main() {
+    val instanceLock = DesktopInstanceLock.tryAcquire()
+    if (instanceLock == null) {
+        JOptionPane.showMessageDialog(
+            null,
+            "Flow is already running.",
+            "Flow",
+            JOptionPane.INFORMATION_MESSAGE,
+        )
+        return
+    }
+    instanceLock.use {
+        application {
+            val trayState = rememberTrayState()
+            val trayIcon = rememberVectorPainter(Icons.Default.Home)
+            val settingsStore = remember { DesktopSettingsStore() }
+            var settings by remember { mutableStateOf(settingsStore.load()) }
+            if (isTraySupported) {
+                Tray(
+                    icon = trayIcon,
+                    state = trayState,
+                    tooltip = "Flow",
+                    menu = {
+                        Item("Open Flow website", onClick = { openExternalUrl("https://github.com/A-EDev/Flow") })
+                        Separator()
+                        Item("Quit", onClick = ::exitApplication)
                     },
                 )
             }
+            Window(
+                onCloseRequest = ::exitApplication,
+                title = "Flow",
+            ) {
+                MenuBar {
+                    Menu("Flow") {
+                        Item("Project website", onClick = { openExternalUrl("https://github.com/A-EDev/Flow") })
+                        Separator()
+                        Item("Quit", onClick = ::exitApplication)
+                    }
+                }
+                FlowDesktopTheme(darkTheme = settings.darkTheme) {
+                    FlowDesktopApp(
+                        settings = settings,
+                        onSettingsChange = { updated ->
+                            runCatching {
+                                settingsStore.save(updated)
+                                settings = updated
+                            }
+                        },
+                        onNotify = { title, message ->
+                            if (isTraySupported) trayState.sendNotification(Notification(title, message))
+                        },
+                    )
+                }
+            }
         }
     }
-
-@Composable
-private fun FlowDesktopTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = darkColorScheme(), content = content)
 }
 
 @Composable
-private fun FlowDesktopApp(onNotify: (String, String) -> Unit) {
+private fun FlowDesktopTheme(
+    darkTheme: Boolean,
+    content: @Composable () -> Unit,
+) {
+    MaterialTheme(colorScheme = if (darkTheme) darkColorScheme() else lightColorScheme(), content = content)
+}
+
+@Composable
+private fun FlowDesktopApp(
+    settings: DesktopSettings,
+    onSettingsChange: (DesktopSettings) -> Result<Unit>,
+    onNotify: (String, String) -> Unit,
+) {
     val repository = remember { DesktopYouTubeRepository() }
     val libraryStore = remember { DesktopLibraryStore() }
     val player = remember { DesktopMpvPlayer() }
     val downloader = remember { DesktopDownloader() }
     val scope = rememberCoroutineScope()
-    var destination by remember { mutableStateOf(Destination.HOME) }
+    val initialDestination = settings.visibleRootDestinations().first()
+    var destination by remember { mutableStateOf(initialDestination) }
+    var navigationHistory by remember { mutableStateOf(emptyList<DesktopDestination>()) }
+    val searchState = remember { DesktopSearchState() }
     val initialSavedVideos = remember { libraryStore.load() }
     var savedVideos by remember { mutableStateOf(initialSavedVideos) }
     var history by remember { mutableStateOf(libraryStore.loadHistory()) }
@@ -147,6 +160,31 @@ private fun FlowDesktopApp(onNotify: (String, String) -> Unit) {
     val recommendationQuery = libraryStore.recommendationQuery(savedVideos)
     val savedIds = savedVideos.mapTo(hashSetOf(), Video::id)
     val subscribedIds = subscriptions.mapTo(hashSetOf(), DesktopSubscription::channelId)
+
+    LaunchedEffect(settings) {
+        val visible = settings.visibleRootDestinations()
+        navigationHistory =
+            navigationHistory.filter { previous ->
+                previous in visible || previous == DesktopDestination.SEARCH || previous == DesktopDestination.DOWNLOADS
+            }
+    }
+
+    fun navigateRoot(target: DesktopDestination) {
+        destination = target
+        navigationHistory = emptyList()
+    }
+
+    fun navigateNested(target: DesktopDestination) {
+        if (destination == target) return
+        navigationHistory = navigationHistory + destination
+        destination = target
+    }
+
+    fun navigateBack() {
+        val previous = navigationHistory.lastOrNull() ?: settings.visibleRootDestinations().first()
+        navigationHistory = navigationHistory.dropLast(1)
+        destination = previous
+    }
 
     fun toggleSaved(video: Video) {
         scope.launch {
@@ -188,6 +226,7 @@ private fun FlowDesktopApp(onNotify: (String, String) -> Unit) {
                 statusMessage = "Downloaded to $path"
                 onNotify("Download complete", video.title)
             } catch (cancellation: CancellationException) {
+                statusMessage = "Download cancelled: ${video.title}"
                 throw cancellation
             } catch (failure: Throwable) {
                 statusMessage = "Download failed: ${failure.message}"
@@ -288,7 +327,7 @@ private fun FlowDesktopApp(onNotify: (String, String) -> Unit) {
     }
 
     LaunchedEffect(destination, recommendationQuery, homeReloadKey) {
-        if (destination != Destination.HOME) return@LaunchedEffect
+        if (destination != DesktopDestination.HOME) return@LaunchedEffect
         homeLoading = true
         homeError = null
         try {
@@ -341,43 +380,21 @@ private fun FlowDesktopApp(onNotify: (String, String) -> Unit) {
         Row(
             modifier = Modifier.fillMaxSize().padding(padding),
         ) {
-            NavigationRail(
-                modifier = Modifier.fillMaxHeight(),
-                header = {
-                    Text(
-                        text = "Flow",
-                        color = MaterialTheme.colorScheme.primary,
-                        style = MaterialTheme.typography.headlineSmall,
-                        modifier = Modifier.padding(vertical = 18.dp),
-                    )
-                },
-            ) {
-                Destination.entries.forEach { item ->
-                    NavigationRailItem(
-                        selected = destination == item,
-                        onClick = { destination = item },
-                        icon = {
-                            Icon(
-                                imageVector =
-                                    when (item) {
-                                        Destination.HOME -> Icons.Default.Home
-                                        Destination.SEARCH -> Icons.Default.Search
-                                        Destination.SUBSCRIPTIONS -> Icons.Default.Subscriptions
-                                        Destination.LIBRARY -> Icons.Default.LibraryMusic
-                                        Destination.DOWNLOADS -> Icons.Default.Download
-                                        Destination.SETTINGS -> Icons.Default.Settings
-                                    },
-                                contentDescription = item.label,
-                            )
-                        },
-                        label = { Text(item.label) },
-                    )
-                }
+            DesktopNavigationRail(destination = destination, settings = settings) { item ->
+                navigateRoot(item)
             }
 
             VerticalDivider(modifier = Modifier.fillMaxHeight().width(1.dp))
 
             Column(modifier = Modifier.fillMaxSize()) {
+                DesktopGlobalActions(
+                    destination = destination,
+                    settings = settings,
+                    canGoBack = navigationHistory.isNotEmpty(),
+                    onBack = ::navigateBack,
+                    onSearch = { navigateNested(DesktopDestination.SEARCH) },
+                    onSettings = { navigateNested(DesktopDestination.SETTINGS) },
+                )
                 statusMessage?.let { message ->
                     Surface(
                         color = MaterialTheme.colorScheme.surfaceVariant,
@@ -395,13 +412,14 @@ private fun FlowDesktopApp(onNotify: (String, String) -> Unit) {
 
                 Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                     when (destination) {
-                        Destination.HOME -> {
+                        DesktopDestination.HOME -> {
                             HomeScreen(
                                 videos = homeVideos,
                                 loading = homeLoading,
                                 error = homeError,
                                 savedIds = savedIds,
                                 subscribedIds = subscribedIds,
+                                watchedIds = history.mapTo(hashSetOf(), Video::id),
                                 recommendationQuery = recommendationQuery,
                                 onRetry = { homeReloadKey++ },
                                 onPlay = ::play,
@@ -413,9 +431,38 @@ private fun FlowDesktopApp(onNotify: (String, String) -> Unit) {
                             )
                         }
 
-                        Destination.SEARCH -> {
+                        DesktopDestination.SHORTS -> {
+                            ShortsScreen(
+                                repository = repository,
+                                savedIds = savedIds,
+                                subscribedIds = subscribedIds,
+                                onPlay = ::play,
+                                onToggleSaved = ::toggleSaved,
+                                onDownload = ::download,
+                                onToggleSubscription = ::toggleSubscription,
+                                onCopyLink = ::copyLink,
+                                onAddToPlaylist = ::addToPlaylist,
+                            )
+                        }
+
+                        DesktopDestination.MUSIC -> {
+                            MusicScreen(
+                                repository = repository,
+                                savedIds = savedIds,
+                                subscribedIds = subscribedIds,
+                                onPlay = ::play,
+                                onToggleSaved = ::toggleSaved,
+                                onDownload = ::download,
+                                onToggleSubscription = ::toggleSubscription,
+                                onCopyLink = ::copyLink,
+                                onAddToPlaylist = ::addToPlaylist,
+                            )
+                        }
+
+                        DesktopDestination.SEARCH -> {
                             SearchScreen(
                                 repository = repository,
+                                state = searchState,
                                 savedIds = savedIds,
                                 subscribedIds = subscribedIds,
                                 searchHistory = searchHistory,
@@ -435,7 +482,21 @@ private fun FlowDesktopApp(onNotify: (String, String) -> Unit) {
                             )
                         }
 
-                        Destination.SUBSCRIPTIONS -> {
+                        DesktopDestination.EXPLORE -> {
+                            ExploreScreen(
+                                repository = repository,
+                                savedIds = savedIds,
+                                subscribedIds = subscribedIds,
+                                onPlay = ::play,
+                                onToggleSaved = ::toggleSaved,
+                                onDownload = ::download,
+                                onToggleSubscription = ::toggleSubscription,
+                                onCopyLink = ::copyLink,
+                                onAddToPlaylist = ::addToPlaylist,
+                            )
+                        }
+
+                        DesktopDestination.SUBSCRIPTIONS -> {
                             SubscriptionsScreen(
                                 subscriptions = subscriptions,
                                 repository = repository,
@@ -449,7 +510,7 @@ private fun FlowDesktopApp(onNotify: (String, String) -> Unit) {
                             )
                         }
 
-                        Destination.LIBRARY -> {
+                        DesktopDestination.LIBRARY -> {
                             LibraryScreen(
                                 savedVideos = savedVideos,
                                 history = history,
@@ -460,6 +521,8 @@ private fun FlowDesktopApp(onNotify: (String, String) -> Unit) {
                                 onToggleSaved = ::toggleSaved,
                                 onDownload = ::download,
                                 onToggleSubscription = ::toggleSubscription,
+                                onOpenDownloads = { navigateNested(DesktopDestination.DOWNLOADS) },
+                                onOpenLocalFile = { pickMediaFile()?.let(::playFile) },
                                 onClearHistory = {
                                     scope.launch {
                                         runCatchingCancellable { withContext(Dispatchers.IO) { libraryStore.clearHistory() } }
@@ -477,7 +540,7 @@ private fun FlowDesktopApp(onNotify: (String, String) -> Unit) {
                             )
                         }
 
-                        Destination.DOWNLOADS -> {
+                        DesktopDestination.DOWNLOADS -> {
                             DownloadsScreen(
                                 downloader = downloader,
                                 onPlayFile = ::playFile,
@@ -485,8 +548,15 @@ private fun FlowDesktopApp(onNotify: (String, String) -> Unit) {
                             )
                         }
 
-                        Destination.SETTINGS -> {
-                            SettingsScreen(player = player, repository = repository, downloader = downloader, libraryStore = libraryStore)
+                        DesktopDestination.SETTINGS -> {
+                            SettingsScreen(
+                                player = player,
+                                repository = repository,
+                                downloader = downloader,
+                                libraryStore = libraryStore,
+                                settings = settings,
+                                onSettingsChange = onSettingsChange,
+                            )
                         }
                     }
                 }
@@ -541,11 +611,4 @@ private fun FlowDesktopApp(onNotify: (String, String) -> Unit) {
             }
         }
     }
-}
-
-private fun pickMediaFile(): Path? {
-    val dialog = FileDialog(null as Frame?, "Open media", FileDialog.LOAD)
-    dialog.isVisible = true
-    val file = dialog.file ?: return null
-    return Path.of(dialog.directory, file)
 }

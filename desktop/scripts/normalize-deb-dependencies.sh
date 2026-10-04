@@ -16,6 +16,11 @@ trap 'rm -rf "$work_dir"; rm -f "$rebuilt"' EXIT
 mkdir -p "$work_dir"
 dpkg-deb -R "$deb" "$work_dir"
 
+# jpackage's Linux maintainer scripts use xdg-desktop-menu in system mode. Minimal
+# Debian/Ubuntu images may not already have either menu directory, so carry the
+# directories in the package instead of relying on the target desktop environment.
+install -d -m 0755 "$work_dir/usr/share/applications" "$work_dir/usr/share/desktop-directories"
+
 control="$work_dir/DEBIAN/control"
 if [[ ! -f "$control" ]]; then
   echo "DEB control file was not extracted from $deb" >&2
@@ -49,6 +54,28 @@ dependency_name() {
   dependency=$(trim "$1")
   dependency=$(printf '%s' "$dependency" | sed -E 's/[[:space:]]*\([^)]*\)[[:space:]]*$//')
   trim "$dependency"
+}
+
+remove_dependency_from_group() {
+  local group=$1
+  local package=$2
+  local raw_alternative alternative name
+  local alternatives=()
+  local kept=()
+
+  IFS='|' read -ra alternatives <<< "$group"
+  for raw_alternative in "${alternatives[@]}"; do
+    alternative=$(trim "$raw_alternative")
+    name=$(dependency_name "$alternative")
+    if [[ "$name" != "$package" ]]; then
+      kept+=("$alternative")
+    fi
+  done
+  local result=""
+  for alternative in "${kept[@]}"; do
+    result="${result:+$result | }$alternative"
+  done
+  printf '%s' "$result"
 }
 
 normalize_dependency_group() {
@@ -117,18 +144,20 @@ normalized_depends=""
 IFS=',' read -ra dependency_groups <<< "$depends"
 for raw_group in "${dependency_groups[@]}"; do
   group=$(trim "$raw_group")
+  group=$(remove_dependency_from_group "$group" "yt-dlp")
+  [[ -n "$group" ]] || continue
   group=$(normalize_dependency_group "$group" "libasound2t64" "libasound2" "libasound2t64 | libasound2")
   group=$(normalize_dependency_group "$group" "libpng16-16t64" "libpng16-16" "libpng16-16t64 | libpng16-16")
   normalized_depends="${normalized_depends:+$normalized_depends, }$group"
 done
 
-for runtime_dependency in mpv yt-dlp ffmpeg; do
+for runtime_dependency in mpv ffmpeg; do
   if ! has_dependency "$normalized_depends" "$runtime_dependency"; then
     normalized_depends="$normalized_depends, $runtime_dependency"
   fi
 done
 
-for required_dependency in libasound2t64 libasound2 libpng16-16t64 libpng16-16 mpv yt-dlp ffmpeg; do
+for required_dependency in libasound2t64 libasound2 libpng16-16t64 libpng16-16 mpv ffmpeg; do
   if ! has_dependency "$normalized_depends" "$required_dependency"; then
     echo "Failed to normalize required dependency '$required_dependency'" >&2
     exit 1
@@ -149,14 +178,77 @@ awk -v dependencies="$normalized_depends" '
 ' "$control" > "$control.tmp"
 mv "$control.tmp" "$control"
 
+recommends_lines=$(grep -c '^Recommends:' "$control" || true)
+if [[ "$recommends_lines" -gt 1 ]]; then
+  echo "Expected at most one Recommends field in $control, found $recommends_lines" >&2
+  exit 1
+fi
+if [[ "$recommends_lines" -eq 0 ]]; then
+  awk '
+    BEGIN { inserted = 0 }
+    !inserted && /^$/ {
+      print "Recommends: yt-dlp"
+      inserted = 1
+    }
+    { print }
+    END {
+      if (!inserted) print "Recommends: yt-dlp"
+    }
+  ' "$control" > "$control.tmp"
+  mv "$control.tmp" "$control"
+else
+  recommends=$(
+    awk '
+      /^Recommends:/ {
+        in_recommends = 1
+        sub(/^Recommends:[[:space:]]*/, "")
+        printf "%s", $0
+        next
+      }
+      in_recommends && /^[[:space:]]/ {
+        line = $0
+        sub(/^[[:space:]]+/, "", line)
+        printf " %s", line
+        next
+      }
+      in_recommends { exit }
+    ' "$control"
+  )
+  if ! has_dependency "$recommends" "yt-dlp"; then
+    recommends="${recommends:+$recommends, }yt-dlp"
+  fi
+  awk -v dependencies="$recommends" '
+    /^Recommends:/ {
+      print "Recommends: " dependencies
+      in_recommends = 1
+      next
+    }
+    in_recommends && /^[[:space:]]/ { next }
+    {
+      in_recommends = 0
+      print
+    }
+  ' "$control" > "$control.tmp"
+  mv "$control.tmp" "$control"
+fi
+
 dpkg-deb --root-owner-group --build "$work_dir" "$rebuilt" >/dev/null
 
 rebuilt_depends=$(dpkg-deb -f "$rebuilt" Depends)
-for required_dependency in libasound2t64 libasound2 libpng16-16t64 libpng16-16 mpv yt-dlp ffmpeg; do
+for required_dependency in libasound2t64 libasound2 libpng16-16t64 libpng16-16 mpv ffmpeg; do
   if ! has_dependency "$rebuilt_depends" "$required_dependency"; then
     echo "Rebuilt DEB is missing required dependency '$required_dependency'" >&2
     exit 1
   fi
 done
+rebuilt_recommends=$(dpkg-deb -f "$rebuilt" Recommends)
+if ! has_dependency "$rebuilt_recommends" "yt-dlp"; then
+  echo "Rebuilt DEB is missing recommended dependency 'yt-dlp'" >&2
+  exit 1
+fi
+if has_dependency "$rebuilt_depends" "yt-dlp"; then
+  echo "Rebuilt DEB must not require browse-only dependency 'yt-dlp'" >&2
+  exit 1
+fi
 
 mv "$rebuilt" "$deb"
